@@ -1,6 +1,6 @@
 // Vercel Serverless Function: /health (via rewrite to /api/health)
 
-import { app } from '../discovery-service/src/server';
+import { app } from '../discovery-service/dist/server.js';
 
 export default function handler(req: any, res: any) {
   // Our Express app defines GET /health at the root.

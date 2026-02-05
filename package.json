@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build"
+    "build": "npm --prefix discovery-service ci --silent && npm --prefix discovery-service run build --silent && vite build"
   },
   "devDependencies": {
     "vite": "^5.4.0"
