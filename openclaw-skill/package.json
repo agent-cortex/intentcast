@@ -1,0 +1,19 @@
+{
+  "name": "intent-discovery-skill",
+  "version": "0.1.0",
+  "description": "OpenClaw skill for agent service discovery via intent broadcasting",
+  "type": "module",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo 'Tests run via discovery-service'"
+  },
+  "dependencies": {
+    "ethers": "^6.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.3.3"
+  }
+}
