@@ -1,103 +1,83 @@
 /**
- * Provider Model — Represents a service provider agent
+ * Provider Model — Explicit capability declaration
  * 
- * Generic schema supporting multiple AI capabilities:
- * coding, research, data_analysis, content_writing, translation,
- * customer_support, lead_generation, summarization, image_generation, automation
+ * Inspired by Claude Code skills: zero ambiguity, self-describing schema.
+ * Schema v2.0 explicitly declares inputs, outputs, and capabilities.
+ * 
+ * Backward compatible: old fields (capabilities as string[], pricing as object) still work.
  */
 
-export type ProviderStatus = 'online' | 'offline' | 'busy';
+import { InputType, OutputFormat } from './intent.js';
 
-export interface ProviderCapability {
-  /** Category ID this capability belongs to */
+export type ProviderStatus = 'online' | 'offline' | 'busy' | 'maintenance';
+
+/**
+ * Capability declaration (v2.0 explicit)
+ */
+export interface CapabilityDeclaration {
   category: string;
-  
-  /** Supported input types */
-  inputTypes?: ('text' | 'code' | 'url' | 'file' | 'json' | 'image' | 'audio' | 'video')[];
-  
-  /** Supported output formats */
-  outputFormats?: ('text' | 'code' | 'json' | 'markdown' | 'image' | 'file' | 'structured')[];
-  
-  /** Supported languages (for translation, content, etc.) */
-  languages?: string[];
-  
-  /** Max input size (characters, tokens, or bytes depending on context) */
-  maxInputSize?: number;
-  
-  /** Average response time in minutes */
-  avgResponseMinutes?: number;
-  
-  /** Additional metadata about this capability */
-  metadata?: Record<string, unknown>;
+  name: string;
+  description: string;
+  acceptsInputTypes?: InputType[];
+  acceptsMimeTypes?: string[];
+  acceptsLanguages?: string[];
+  acceptsLocales?: string[];
+  maxInputSize?: { value: number; unit: 'bytes' | 'chars' | 'tokens' | 'words' | 'lines' };
+  producesOutputFormats?: OutputFormat[];
+  producesMimeTypes?: string[];
+  producesLanguages?: string[];
+  producesLocales?: string[];
+  avgProcessingTime?: { value: number; unit: 'seconds' | 'minutes' | 'hours' };
+  guarantees?: { accuracy?: number; revisions?: number; responseTimeMinutes?: number };
 }
 
-export interface ProviderPricing {
-  /** Category ID */
+/**
+ * Pricing declaration (v2.0 explicit)
+ */
+export interface PricingDeclaration {
   category: string;
-  
-  /** Base price in USDC */
   basePrice: string;
-  
-  /** Pricing unit (per word, per task, per hour, etc.) */
-  unit: string;
-  
-  /** Minimum price per job */
-  minPrice?: string;
-  
-  /** Maximum price per job */
-  maxPrice?: string;
+  unit: 'per_task' | 'per_word' | 'per_token' | 'per_minute' | 'per_image' | 'per_request' | 'flat';
+  minimumCharge?: string;
+  maximumCharge?: string;
+  rushMultiplier?: number;
+  volumeDiscounts?: Array<{ minUnits: number; discountPercent: number }>;
 }
 
 export interface Provider {
   id: string;
-  
-  /** Unique agent identifier */
   agentId: string;
   
-  /** Display name */
-  name?: string;
-  
-  /** Short description of the provider */
-  description?: string;
-  
-  /** Provider's avatar URL */
-  avatarUrl?: string;
-  
-  /** List of category IDs this provider supports */
+  /** === BACKWARD COMPATIBLE FIELDS === */
+  /** Categories as simple string array */
   capabilities: string[];
-  
-  /** Detailed capability specifications */
-  capabilityDetails?: ProviderCapability[];
-  
-  /** Legacy: simple pricing map (deprecated, use pricingDetails) */
+  /** Pricing as simple object */
   pricing: Record<string, string>;
   
-  /** Detailed pricing specifications */
-  pricingDetails?: ProviderPricing[];
+  /** === V2.0 EXPLICIT FIELDS === */
+  schemaVersion?: '2.0';
+  name?: string;
+  description?: string;
+  argumentHint?: string;
+  avatarUrl?: string;
+  /** Detailed capability declarations */
+  capabilityDetails?: CapabilityDeclaration[];
+  /** Detailed pricing declarations */
+  pricingDetails?: PricingDeclaration[];
   
-  /** Tags for discovery */
   tags?: string[];
-  
-  /** Supported languages (global across capabilities) */
   languages?: string[];
-  
-  /** Wallet address for payments */
   wallet: string;
-  
-  /** Current status */
   status: ProviderStatus;
   
-  /** Number of completed jobs */
+  /** Stats */
   completedJobs?: number;
-  
-  /** Average rating (0-5) */
   rating?: number;
-  
-  /** Number of ratings */
   ratingCount?: number;
   
-  /** Website or documentation URL */
+  certifications?: string[];
   websiteUrl?: string;
+  apiEndpoint?: string;
   
   registeredAt: Date;
   lastSeen: Date;
@@ -105,40 +85,56 @@ export interface Provider {
 
 export interface CreateProviderInput {
   agentId: string;
+  wallet: string;
+  
+  // Backward compatible (required)
+  capabilities: string[];
+  pricing: Record<string, string>;
+  
+  // V2.0 explicit (optional)
   name?: string;
   description?: string;
+  argumentHint?: string;
   avatarUrl?: string;
-  capabilities: string[];
-  capabilityDetails?: ProviderCapability[];
-  pricing: Record<string, string>;
-  pricingDetails?: ProviderPricing[];
+  capabilityDetails?: CapabilityDeclaration[];
+  pricingDetails?: PricingDeclaration[];
   tags?: string[];
   languages?: string[];
-  wallet: string;
+  certifications?: string[];
   websiteUrl?: string;
+  apiEndpoint?: string;
 }
 
 export function createProvider(input: CreateProviderInput, id: string): Provider {
   const now = new Date();
   
+  // Determine schema version
+  const isV2 = !!(input.capabilityDetails || input.pricingDetails);
+  
   return {
     id,
     agentId: input.agentId,
+    // Backward compatible
+    capabilities: input.capabilities,
+    pricing: input.pricing,
+    // V2.0 fields
+    schemaVersion: isV2 ? '2.0' : undefined,
     name: input.name,
     description: input.description,
+    argumentHint: input.argumentHint,
     avatarUrl: input.avatarUrl,
-    capabilities: input.capabilities,
     capabilityDetails: input.capabilityDetails,
-    pricing: input.pricing,
     pricingDetails: input.pricingDetails,
     tags: input.tags,
     languages: input.languages,
     wallet: input.wallet,
-    websiteUrl: input.websiteUrl,
     status: 'online',
     completedJobs: 0,
     rating: undefined,
     ratingCount: 0,
+    certifications: input.certifications,
+    websiteUrl: input.websiteUrl,
+    apiEndpoint: input.apiEndpoint,
     registeredAt: now,
     lastSeen: now,
   };
