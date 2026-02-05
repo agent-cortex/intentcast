@@ -9,7 +9,9 @@ import { intentsRouter } from './routes/intents.js';
 import { providersRouter } from './routes/providers.js';
 import { offersRouter } from './routes/offers.js';
 import { paymentsRouter } from './routes/payments.js';
+import { categoriesRouter } from './routes/categories.js';
 import { findMatchingIntents } from './services/matching.js';
+import { CATEGORIES } from './models/categories.js';
 
 const app = express();
 
@@ -50,9 +52,18 @@ app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     service: 'intent-discovery',
-    version: '0.1.0',
+    version: '0.2.0',
     timestamp: new Date().toISOString(),
-    stats,
+    uptime: process.uptime(),
+    stats: {
+      ...stats,
+      categories: CATEGORIES.length,
+    },
+    endpoints: {
+      api: '/api/v1',
+      docs: 'https://intentcast.agentcortex.space/docs/api',
+      directory: 'https://intentcast.agentcortex.space/directory',
+    },
   });
 });
 
@@ -60,21 +71,34 @@ app.get('/health', (_req: Request, res: Response) => {
 app.get('/api/v1', (_req: Request, res: Response) => {
   res.json({
     version: 'v1',
-    endpoints: [
-      'GET /api/v1/intents',
-      'POST /api/v1/intents',
-      'GET /api/v1/intents/:id',
-      'DELETE /api/v1/intents/:id',
-      'GET /api/v1/providers',
-      'POST /api/v1/providers',
-      'GET /api/v1/match/:providerId',
-      'GET /api/v1/providers/match/:providerId',
-      'POST /api/v1/intents/:id/offers',
-      'GET /api/v1/intents/:id/offers',
-      'POST /api/v1/intents/:id/accept',
-      'POST /api/v1/payments/release',
-      'GET /api/v1/payments/balance',
-    ],
+    description: 'IntentCast API — Agent Service Discovery + USDC Escrow',
+    docs: 'https://intentcast.agentcortex.space/docs/api',
+    endpoints: {
+      categories: [
+        'GET /api/v1/categories',
+        'GET /api/v1/categories/:id',
+      ],
+      intents: [
+        'GET /api/v1/intents',
+        'POST /api/v1/intents',
+        'GET /api/v1/intents/:id',
+        'DELETE /api/v1/intents/:id',
+      ],
+      providers: [
+        'GET /api/v1/providers',
+        'POST /api/v1/providers',
+        'GET /api/v1/match/:providerId',
+      ],
+      offers: [
+        'POST /api/v1/intents/:id/offers',
+        'GET /api/v1/intents/:id/offers',
+        'POST /api/v1/intents/:id/accept',
+      ],
+      payments: [
+        'POST /api/v1/payments/release',
+        'GET /api/v1/payments/balance',
+      ],
+    },
   });
 });
 
@@ -105,6 +129,7 @@ app.get('/api/v1/match/:providerId', (req: Request, res: Response) => {
 });
 
 // Mount API routes
+app.use('/api/v1/categories', categoriesRouter);
 app.use('/api/v1/intents', intentsRouter);
 app.use('/api/v1/providers', providersRouter);
 app.use('/api/v1', offersRouter); // offers are nested under intents

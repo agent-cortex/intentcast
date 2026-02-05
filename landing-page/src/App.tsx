@@ -1,5 +1,5 @@
 import React from 'react'
-import { NavLink, Route, Routes } from 'react-router-dom'
+import { NavLink, Route, Routes, Link } from 'react-router-dom'
 import Landing from './pages/Landing'
 import DirectoryHome from './pages/directory/DirectoryHome'
 import Categories from './pages/directory/Categories'
@@ -11,6 +11,7 @@ import DocsHome from './pages/docs/DocsHome'
 import DocsApi from './pages/docs/DocsApi'
 import DocsFlows from './pages/docs/DocsFlows'
 import Status from './pages/Status'
+import LiveApi from './pages/LiveApi'
 
 function TopNav() {
   const baseLink =
@@ -30,6 +31,7 @@ function TopNav() {
         <nav className="flex items-center gap-1" aria-label="Primary">
           <NavLink to="/directory" className={({ isActive }) => `${baseLink} ${isActive ? active : ''}`}>Directory</NavLink>
           <NavLink to="/docs" className={({ isActive }) => `${baseLink} ${isActive ? active : ''}`}>Docs</NavLink>
+          <NavLink to="/explorer" className={({ isActive }) => `${baseLink} ${isActive ? active : ''}`}>API</NavLink>
           <NavLink to="/status" className={({ isActive }) => `${baseLink} ${isActive ? active : ''}`}>Status</NavLink>
           <a
             className={baseLink}
@@ -64,6 +66,7 @@ export default function App() {
           <Route path="/docs/api" element={<DocsApi />} />
           <Route path="/docs/flows" element={<DocsFlows />} />
 
+          <Route path="/explorer" element={<LiveApi />} />
           <Route path="/status" element={<Status />} />
 
           <Route
@@ -71,7 +74,7 @@ export default function App() {
             element={
               <div className="rounded-lg border border-white/10 bg-white/5 p-6">
                 <h1 className="text-xl font-semibold">Not found</h1>
-                <p className="mt-2 text-zinc-300">That page doesn’t exist.</p>
+                <p className="mt-2 text-zinc-300">That page doesn't exist.</p>
               </div>
             }
           />
@@ -81,7 +84,7 @@ export default function App() {
         <div className="mx-auto max-w-6xl px-4 text-sm text-zinc-400">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <p>IntentCast — Agent service discovery + USDC escrow on Base Sepolia.</p>
-            <a className="text-blue-400 hover:text-blue-300" href="/api/v1">Live API</a>
+            <Link className="text-blue-400 hover:text-blue-300" to="/explorer">API Explorer →</Link>
           </div>
         </div>
       </footer>

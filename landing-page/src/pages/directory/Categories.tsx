@@ -1,83 +1,85 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { api, unwrapList, Provider, Intent } from '../../lib/api'
+import { api, Category } from '../../lib/api'
 
 export default function Categories() {
-  const [providers, setProviders] = React.useState<Provider[]>([])
-  const [intents, setIntents] = React.useState<Intent[]>([])
+  const [categories, setCategories] = React.useState<Category[]>([])
   const [error, setError] = React.useState<string | null>(null)
+  const [loading, setLoading] = React.useState(true)
 
   React.useEffect(() => {
-    Promise.all([api.providers(), api.intents()])
-      .then(([p, i]) => {
-        setProviders(unwrapList<Provider>(p, 'providers'))
-        setIntents(unwrapList<Intent>(i, 'intents'))
+    api.categories()
+      .then((data) => {
+        setCategories(data.categories ?? [])
+        setLoading(false)
       })
-      .catch((e) => setError(String(e)))
+      .catch((e) => {
+        setError(String(e))
+        setLoading(false)
+      })
   }, [])
 
-  const counts = new Map<string, { providers: number; intents: number }>()
-
-  for (const p of providers) {
-    for (const c of p.categories ?? []) {
-      const cur = counts.get(c) ?? { providers: 0, intents: 0 }
-      cur.providers += 1
-      counts.set(c, cur)
-    }
-  }
-  for (const it of intents) {
-    const c = it.category
-    if (!c) continue
-    const cur = counts.get(c) ?? { providers: 0, intents: 0 }
-    cur.intents += 1
-    counts.set(c, cur)
-  }
-
-  const rows = Array.from(counts.entries()).sort((a, b) => a[0].localeCompare(b[0]))
-
   return (
-    <div className="grid gap-4">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Categories</h1>
-          <p className="mt-2 text-sm text-zinc-300">Derived live from <code className="text-zinc-100">/providers</code> and <code className="text-zinc-100">/intents</code>.</p>
-        </div>
+    <div className="grid gap-6">
+      <div>
+        <h1 className="text-2xl font-bold">Categories</h1>
+        <p className="mt-2 text-sm text-zinc-300">
+          Browse service categories supported by IntentCast. Each category defines input/output formats and pricing models.
+        </p>
       </div>
 
       {error ? (
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</div>
       ) : null}
 
-      <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-white/5 text-zinc-300">
-            <tr>
-              <th className="px-4 py-3 text-left font-medium">Category</th>
-              <th className="px-4 py-3 text-left font-medium">Providers</th>
-              <th className="px-4 py-3 text-left font-medium">Intents</th>
-              <th className="px-4 py-3 text-left font-medium">Explore</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 ? (
-              <tr>
-                <td className="px-4 py-4 text-zinc-300" colSpan={4}>Loading…</td>
-              </tr>
-            ) : (
-              rows.map(([cat, c]) => (
-                <tr key={cat} className="border-t border-white/10">
-                  <td className="px-4 py-3 font-medium text-white">{cat}</td>
-                  <td className="px-4 py-3 text-zinc-300">{c.providers}</td>
-                  <td className="px-4 py-3 text-zinc-300">{c.intents}</td>
-                  <td className="px-4 py-3">
-                    <Link className="text-blue-400 hover:text-blue-300" to={`/directory/providers?category=${encodeURIComponent(cat)}`}>View providers</Link>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {loading ? (
+        <div className="rounded-lg border border-white/10 bg-white/5 p-6 text-zinc-300">Loading categories…</div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {categories.map((cat) => (
+            <div key={cat.id} className="rounded-xl border border-white/10 bg-white/5 p-6">
+              <div className="flex items-start gap-4">
+                <span className="text-3xl" role="img" aria-label={cat.name}>{cat.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg font-semibold text-white">{cat.name}</h2>
+                  <p className="mt-1 text-sm text-zinc-300 line-clamp-2">{cat.description}</p>
+                  
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {cat.tags.slice(0, 4).map((tag) => (
+                      <span key={tag} className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-zinc-300">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="flex gap-4 text-xs text-zinc-400">
+                      <span>{cat.stats.providers} provider{cat.stats.providers !== 1 ? 's' : ''}</span>
+                      <span>{cat.stats.intents} intent{cat.stats.intents !== 1 ? 's' : ''}</span>
+                    </div>
+                    <span className="text-xs text-zinc-400">{cat.pricingUnit}</span>
+                  </div>
+
+                  <div className="mt-4 flex gap-2">
+                    <Link 
+                      className="text-sm text-blue-400 hover:text-blue-300" 
+                      to={`/directory/providers?category=${encodeURIComponent(cat.id)}`}
+                    >
+                      View providers →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && categories.length === 0 && !error ? (
+        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-200">
+          No categories found. The API may need to be updated.
+        </div>
+      ) : null}
     </div>
   )
 }

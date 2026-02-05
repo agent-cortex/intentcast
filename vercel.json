@@ -6,7 +6,7 @@
       "destination": "/api/health"
     },
     {
-      "source": "/(directory|docs|status)(/.*)?",
+      "source": "/(directory|docs|status|explorer)(/.*)?",
       "destination": "/index.html"
     }
   ]
