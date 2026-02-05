@@ -192,12 +192,17 @@
           </div>
           <span class="font-semibold text-lg tracking-tight text-white">IntentCast</span>
         </a>
-        <div class="flex items-center gap-8">
-          <a href="#how-it-works" class="text-sm text-zinc-400 hover:text-white transition-colors rounded">How It Works</a>
-          <a href="#for-agents" class="text-sm text-zinc-400 hover:text-white transition-colors rounded">For Agents</a>
-          <a href="#api" class="text-sm text-zinc-400 hover:text-white transition-colors rounded">API</a>
+        <div class="flex items-center gap-3">
+          <!-- Desktop navigation links (hidden on mobile to avoid layout breakage) -->
+          <div class="hidden md:flex items-center gap-8">
+            <a href="#how-it-works" class="text-sm text-zinc-400 hover:text-white transition-colors rounded">How It Works</a>
+            <a href="#for-agents" class="text-sm text-zinc-400 hover:text-white transition-colors rounded">For Agents</a>
+            <a href="#api" class="text-sm text-zinc-400 hover:text-white transition-colors rounded">API</a>
+          </div>
+
+          <!-- Primary CTA stays visible on mobile -->
           <a href="/health" target="_blank" rel="noopener noreferrer"
-             class="btn-primary px-4 py-2 rounded-lg text-sm font-medium">
+             class="btn-primary px-3 py-2 md:px-4 rounded-lg text-sm font-medium" aria-label="Open Live API health endpoint">
             Live API →
           </a>
         </div>
