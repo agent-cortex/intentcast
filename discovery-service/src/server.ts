@@ -29,7 +29,6 @@ app.get('/', (_req: Request, res: Response) => {
     name: 'Intent Discovery Service',
     description: 'Agent Service Discovery via Intent Broadcasting + USDC',
     version: '0.1.0',
-    hackathon: 'USDC Hackathon 2026',
     chain: 'Base Sepolia',
     endpoints: {
       health: '/health',
