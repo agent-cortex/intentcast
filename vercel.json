@@ -1,3 +1,13 @@
 {
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/health",
+      "destination": "https://home.tail987709.ts.net/discovery/health"
+    },
+    {
+      "source": "/api/v1/:path*",
+      "destination": "https://home.tail987709.ts.net/discovery/api/v1/:path*"
+    }
+  ]
 }
