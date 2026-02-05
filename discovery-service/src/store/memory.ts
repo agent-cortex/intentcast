@@ -4,7 +4,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { Intent, CreateIntentInput, createIntent } from '../models/intent.js';
-import { Provider, CreateProviderInput, createProvider } from '../models/provider.js';
+import { Provider, CreateProviderInput, createProvider, getProviderCategories } from '../models/provider.js';
 import { Offer, CreateOfferInput, createOffer } from '../models/offer.js';
 
 // In-memory storage
@@ -32,7 +32,7 @@ export const intentStore = {
       result = result.filter(i => i.status === filter.status);
     }
     if (filter?.category) {
-      result = result.filter(i => i.category === filter.category);
+      result = result.filter(i => i.requires.category === filter.category);
     }
     
     return result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -71,15 +71,15 @@ export const providerStore = {
     return providers.get(id);
   },
 
-  list(filter?: { status?: string; capability?: string }): Provider[] {
+  list(filter?: { status?: string; category?: string }): Provider[] {
     let result = Array.from(providers.values());
     
     if (filter?.status) {
       result = result.filter(p => p.status === filter.status);
     }
-    if (filter?.capability) {
-      const cap = filter.capability;
-      result = result.filter(p => p.capabilities.includes(cap));
+    if (filter?.category) {
+      const cat = filter.category;
+      result = result.filter(p => getProviderCategories(p).includes(cat));
     }
     
     return result;
@@ -102,9 +102,9 @@ export const providerStore = {
     return Array.from(providers.values()).find(p => p.agentId === agentId);
   },
 
-  getByCapabilities(capabilities: string[]): Provider[] {
+  getByCategory(category: string): Provider[] {
     return Array.from(providers.values()).filter(p =>
-      capabilities.some(cap => p.capabilities.includes(cap))
+      getProviderCategories(p).includes(category)
     );
   },
 };

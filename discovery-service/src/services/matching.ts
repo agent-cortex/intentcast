@@ -4,7 +4,7 @@
 
 import { intentStore, providerStore } from '../store/memory.js';
 import { Intent } from '../models/intent.js';
-import { Provider } from '../models/provider.js';
+import { Provider, getProviderCategories, getProviderPricing } from '../models/provider.js';
 
 export interface MatchResult {
   intent: Intent;
@@ -21,11 +21,12 @@ export function findMatchingIntents(providerId: string): MatchResult[] {
   
   // Get all active intents
   const activeIntents = intentStore.list({ status: 'active' });
+  const providerCats = getProviderCategories(provider);
   
   const matches: MatchResult[] = [];
   
   for (const intent of activeIntents) {
-    const matchedCaps = getMatchedCapabilities(intent, provider);
+    const matchedCaps = getMatchedCapabilities(intent, provider, providerCats);
     
     if (matchedCaps.length > 0) {
       const score = calculateMatchScore(intent, provider, matchedCaps);
@@ -54,7 +55,8 @@ export function findMatchingProviders(intentId: string): Array<{ provider: Provi
   const matches: Array<{ provider: Provider; score: number; matchedCapabilities: string[] }> = [];
   
   for (const provider of onlineProviders) {
-    const matchedCaps = getMatchedCapabilities(intent, provider);
+    const providerCats = getProviderCategories(provider);
+    const matchedCaps = getMatchedCapabilities(intent, provider, providerCats);
     
     if (matchedCaps.length > 0) {
       const score = calculateMatchScore(intent, provider, matchedCaps);
@@ -73,15 +75,15 @@ export function findMatchingProviders(intentId: string): Array<{ provider: Provi
 /**
  * Get capabilities that match between intent and provider
  */
-function getMatchedCapabilities(intent: Intent, provider: Provider): string[] {
-  const intentCategory = intent.category.toLowerCase();
+function getMatchedCapabilities(intent: Intent, provider: Provider, providerCats: string[]): string[] {
+  const intentCategory = intent.requires.category.toLowerCase();
   
-  return provider.capabilities.filter(cap => {
-    const capLower = cap.toLowerCase();
-    // Match if category equals capability or is a substring
-    return capLower === intentCategory || 
-           capLower.includes(intentCategory) || 
-           intentCategory.includes(capLower);
+  return providerCats.filter(cat => {
+    const catLower = cat.toLowerCase();
+    // Match if category equals or is related
+    return catLower === intentCategory || 
+           catLower.includes(intentCategory) || 
+           intentCategory.includes(catLower);
   });
 }
 
@@ -98,9 +100,9 @@ function calculateMatchScore(intent: Intent, provider: Provider, matchedCaps: st
   score += Math.min(matchedCaps.length * 10, 20);
   
   // Bonus if provider's pricing is within intent's max price
-  const categoryPricing = provider.pricing[intent.category];
+  const categoryPricing = getProviderPricing(provider, intent.requires.category);
   if (categoryPricing) {
-    const providerPrice = parseFloat(categoryPricing);
+    const providerPrice = parseFloat(categoryPricing.basePrice);
     const maxPrice = parseFloat(intent.maxPriceUsdc);
     
     if (providerPrice <= maxPrice) {
@@ -113,6 +115,25 @@ function calculateMatchScore(intent: Intent, provider: Provider, matchedCaps: st
   // Bonus for verified stake
   if (intent.stakeVerified) {
     score += 10;
+  }
+  
+  // Bonus for high-rated provider
+  if (provider.rating && provider.rating >= 4.5) {
+    score += 5;
+  }
+  
+  // Check min rating requirement
+  if (intent.requires.minRating && provider.rating) {
+    if (provider.rating < intent.requires.minRating) {
+      return 0; // Disqualify
+    }
+  }
+  
+  // Check min completed jobs requirement
+  if (intent.requires.minCompletedJobs) {
+    if (provider.completedJobs < intent.requires.minCompletedJobs) {
+      return 0; // Disqualify
+    }
   }
   
   return Math.min(score, 100);

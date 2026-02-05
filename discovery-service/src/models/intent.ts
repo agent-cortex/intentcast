@@ -1,10 +1,8 @@
 /**
- * Intent Model — Explicit service request contract
+ * Intent Model — Explicit service request contract (v2.0)
  * 
- * Inspired by Claude Code skills: zero ambiguity, self-describing schema.
- * Schema v2.0 explicitly declares inputs, outputs, and required capabilities.
- * 
- * Backward compatible: old fields (category, requirements) still work.
+ * Zero ambiguity, self-describing schema inspired by Claude Code skills.
+ * Explicitly declares inputs, outputs, and required capabilities.
  */
 
 export type IntentStatus = 'active' | 'matched' | 'in_progress' | 'completed' | 'expired' | 'cancelled' | 'disputed';
@@ -17,7 +15,7 @@ export type InputType = 'text' | 'code' | 'url' | 'file' | 'json' | 'image' | 'a
 export type OutputFormat = 'text' | 'code' | 'json' | 'markdown' | 'html' | 'image' | 'audio' | 'video' | 'file' | 'structured';
 
 /**
- * Input specification — what the requester provides (v2.0)
+ * Input specification — what the requester provides
  */
 export interface IntentInputSpec {
   type: InputType;
@@ -30,7 +28,7 @@ export interface IntentInputSpec {
 }
 
 /**
- * Output specification — what the requester expects (v2.0)
+ * Output specification — what the requester expects
  */
 export interface IntentOutputSpec {
   format: OutputFormat;
@@ -44,7 +42,7 @@ export interface IntentOutputSpec {
 }
 
 /**
- * Required capabilities (v2.0)
+ * Required capabilities
  */
 export interface RequiredCapabilities {
   category: string;
@@ -57,27 +55,18 @@ export interface Intent {
   id: string;
   type: 'service_request';
   
-  /** === BACKWARD COMPATIBLE FIELDS === */
-  /** Category ID (simple string for matching) */
-  category: string;
-  /** Legacy requirements object */
-  requirements: Record<string, unknown>;
-  
-  /** === V2.0 EXPLICIT CONTRACT FIELDS === */
-  /** Schema version (absent = v1, "2.0" = explicit) */
-  schemaVersion?: '2.0';
   /** Human-readable title */
-  title?: string;
+  title: string;
   /** Detailed description */
   description?: string;
   /** Argument hint (like Claude skills) */
   argumentHint?: string;
   /** Explicit input spec */
-  input?: IntentInputSpec;
+  input: IntentInputSpec;
   /** Explicit output spec */
-  output?: IntentOutputSpec;
+  output: IntentOutputSpec;
   /** Explicit capability requirements */
-  requires?: RequiredCapabilities;
+  requires: RequiredCapabilities;
   /** Additional context */
   context?: {
     references?: string[];
@@ -88,7 +77,7 @@ export interface Intent {
   /** Tags for discovery */
   tags?: string[];
   /** Urgency level */
-  urgency?: UrgencyLevel;
+  urgency: UrgencyLevel;
   
   /** === PAYMENT === */
   maxPriceUsdc: string;
@@ -106,54 +95,45 @@ export interface Intent {
 }
 
 export interface CreateIntentInput {
-  // Required (backward compatible)
-  category: string;
+  /** Human-readable title */
+  title: string;
+  /** What's needed */
+  input: IntentInputSpec;
+  /** What's expected */
+  output: IntentOutputSpec;
+  /** Required capabilities */
+  requires: RequiredCapabilities;
+  /** Payment */
   maxPriceUsdc: string;
   requesterWallet: string;
   stakeTxHash: string;
   stakeAmount: string;
   
-  // Optional v1 fields
-  requirements?: Record<string, unknown>;
-  deadlineHours?: number;
-  
-  // Optional v2.0 explicit fields
-  title?: string;
+  /** Optional */
   description?: string;
   argumentHint?: string;
-  input?: IntentInputSpec;
-  output?: IntentOutputSpec;
-  requires?: RequiredCapabilities;
   context?: Intent['context'];
   tags?: string[];
   urgency?: UrgencyLevel;
+  deadlineHours?: number;
 }
 
 export function createIntent(input: CreateIntentInput, id: string): Intent {
   const now = new Date();
   const deadlineMs = (input.deadlineHours ?? 24) * 60 * 60 * 1000;
   
-  // Determine schema version based on presence of v2 fields
-  const isV2 = !!(input.input || input.output || input.requires);
-  
   return {
     id,
     type: 'service_request',
-    // Backward compatible
-    category: input.requires?.category ?? input.category,
-    requirements: input.requirements ?? {},
-    // V2.0 fields
-    schemaVersion: isV2 ? '2.0' : undefined,
     title: input.title,
     description: input.description,
     argumentHint: input.argumentHint,
     input: input.input,
     output: input.output,
-    requires: input.requires ?? { category: input.category },
+    requires: input.requires,
     context: input.context,
     tags: input.tags,
     urgency: input.urgency ?? 'normal',
-    // Payment
     maxPriceUsdc: input.maxPriceUsdc,
     deadline: new Date(now.getTime() + deadlineMs),
     requesterWallet: input.requesterWallet,

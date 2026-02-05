@@ -11,17 +11,46 @@ const router = Router();
 
 /**
  * POST /api/v1/intents — Create a new intent
- * Body: { category, requirements?, maxPriceUsdc, deadlineHours?, requesterWallet, stakeTxHash, stakeAmount }
+ * Body: { title, input, output, requires, maxPriceUsdc, requesterWallet, stakeTxHash, stakeAmount, ... }
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
     const input: CreateIntentInput = req.body;
     
     // Validate required fields
-    if (!input.category || !input.maxPriceUsdc || !input.requesterWallet || !input.stakeTxHash || !input.stakeAmount) {
+    const required = ['title', 'input', 'output', 'requires', 'maxPriceUsdc', 'requesterWallet', 'stakeTxHash', 'stakeAmount'];
+    const missing = required.filter(f => !input[f as keyof CreateIntentInput]);
+    
+    if (missing.length > 0) {
       res.status(400).json({
         error: 'Missing required fields',
-        required: ['category', 'maxPriceUsdc', 'requesterWallet', 'stakeTxHash', 'stakeAmount'],
+        required,
+        missing,
+      });
+      return;
+    }
+    
+    // Validate nested required fields
+    if (!input.input?.type || !input.input?.content) {
+      res.status(400).json({
+        error: 'Invalid input spec',
+        required: ['input.type', 'input.content'],
+      });
+      return;
+    }
+    
+    if (!input.output?.format) {
+      res.status(400).json({
+        error: 'Invalid output spec',
+        required: ['output.format'],
+      });
+      return;
+    }
+    
+    if (!input.requires?.category) {
+      res.status(400).json({
+        error: 'Invalid requires spec',
+        required: ['requires.category'],
       });
       return;
     }

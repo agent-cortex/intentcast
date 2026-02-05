@@ -5,6 +5,8 @@
 import { Router, Request, Response } from 'express';
 import { CATEGORIES, getCategoryById } from '../models/categories.js';
 import { intentStore, providerStore } from '../store/memory.js';
+import { getProviderCategories, getProviderPricing, Provider } from '../models/provider.js';
+import { Intent } from '../models/intent.js';
 
 const router = Router();
 
@@ -23,9 +25,10 @@ router.get('/', (_req: Request, res: Response) => {
     }
     
     // Count providers per category
-    providerStore.list().forEach((provider: any) => {
-      for (const cap of provider.capabilities) {
-        const counts = categoryCounts.get(cap);
+    providerStore.list().forEach((provider: Provider) => {
+      const categories = getProviderCategories(provider);
+      for (const catId of categories) {
+        const counts = categoryCounts.get(catId);
         if (counts) {
           counts.providers += 1;
         }
@@ -33,8 +36,9 @@ router.get('/', (_req: Request, res: Response) => {
     });
     
     // Count intents per category
-    intentStore.list().forEach((intent: any) => {
-      const counts = categoryCounts.get(intent.category);
+    intentStore.list().forEach((intent: Intent) => {
+      const catId = intent.requires.category;
+      const counts = categoryCounts.get(catId);
       if (counts) {
         counts.intents += 1;
       }
@@ -68,8 +72,12 @@ router.get('/:id', (req: Request, res: Response) => {
     }
     
     // Get providers and intents for this category
-    const providers = providerStore.list().filter((p: any) => p.capabilities.includes(id));
-    const intents = intentStore.list().filter((i: any) => i.category === id);
+    const providers = providerStore.list().filter((p: Provider) => 
+      getProviderCategories(p).includes(id)
+    );
+    const intents = intentStore.list().filter((i: Intent) => 
+      i.requires.category === id
+    );
     
     res.json({
       ...category,
@@ -77,13 +85,17 @@ router.get('/:id', (req: Request, res: Response) => {
         providers: providers.length,
         intents: intents.length,
       },
-      recentProviders: providers.slice(0, 5).map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        wallet: p.wallet,
-        pricing: p.pricing[id],
-      })),
-      recentIntents: intents.slice(0, 5).map((i: any) => ({
+      recentProviders: providers.slice(0, 5).map((p: Provider) => {
+        const pricing = getProviderPricing(p, id);
+        return {
+          id: p.id,
+          name: p.name,
+          wallet: p.wallet,
+          basePrice: pricing?.basePrice,
+          priceUnit: pricing?.unit,
+        };
+      }),
+      recentIntents: intents.slice(0, 5).map((i: Intent) => ({
         id: i.id,
         title: i.title,
         maxPriceUsdc: i.maxPriceUsdc,

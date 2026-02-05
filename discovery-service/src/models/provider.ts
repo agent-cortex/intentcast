@@ -1,10 +1,8 @@
 /**
- * Provider Model — Explicit capability declaration
+ * Provider Model — Explicit capability declaration (v2.0)
  * 
- * Inspired by Claude Code skills: zero ambiguity, self-describing schema.
- * Schema v2.0 explicitly declares inputs, outputs, and capabilities.
- * 
- * Backward compatible: old fields (capabilities as string[], pricing as object) still work.
+ * Zero ambiguity, self-describing schema inspired by Claude Code skills.
+ * Explicitly declares inputs accepted, outputs produced, and pricing.
  */
 
 import { InputType, OutputFormat } from './intent.js';
@@ -12,18 +10,18 @@ import { InputType, OutputFormat } from './intent.js';
 export type ProviderStatus = 'online' | 'offline' | 'busy' | 'maintenance';
 
 /**
- * Capability declaration (v2.0 explicit)
+ * Capability declaration
  */
 export interface CapabilityDeclaration {
   category: string;
   name: string;
   description: string;
-  acceptsInputTypes?: InputType[];
+  acceptsInputTypes: InputType[];
   acceptsMimeTypes?: string[];
   acceptsLanguages?: string[];
   acceptsLocales?: string[];
   maxInputSize?: { value: number; unit: 'bytes' | 'chars' | 'tokens' | 'words' | 'lines' };
-  producesOutputFormats?: OutputFormat[];
+  producesOutputFormats: OutputFormat[];
   producesMimeTypes?: string[];
   producesLanguages?: string[];
   producesLocales?: string[];
@@ -32,7 +30,7 @@ export interface CapabilityDeclaration {
 }
 
 /**
- * Pricing declaration (v2.0 explicit)
+ * Pricing declaration
  */
 export interface PricingDeclaration {
   category: string;
@@ -48,22 +46,19 @@ export interface Provider {
   id: string;
   agentId: string;
   
-  /** === BACKWARD COMPATIBLE FIELDS === */
-  /** Categories as simple string array */
-  capabilities: string[];
-  /** Pricing as simple object */
-  pricing: Record<string, string>;
-  
-  /** === V2.0 EXPLICIT FIELDS === */
-  schemaVersion?: '2.0';
-  name?: string;
+  /** Human-readable name */
+  name: string;
+  /** Description */
   description?: string;
+  /** Argument hint (like Claude skills) */
   argumentHint?: string;
+  /** Avatar URL */
   avatarUrl?: string;
+  
   /** Detailed capability declarations */
-  capabilityDetails?: CapabilityDeclaration[];
+  capabilities: CapabilityDeclaration[];
   /** Detailed pricing declarations */
-  pricingDetails?: PricingDeclaration[];
+  pricing: PricingDeclaration[];
   
   tags?: string[];
   languages?: string[];
@@ -71,9 +66,9 @@ export interface Provider {
   status: ProviderStatus;
   
   /** Stats */
-  completedJobs?: number;
+  completedJobs: number;
   rating?: number;
-  ratingCount?: number;
+  ratingCount: number;
   
   certifications?: string[];
   websiteUrl?: string;
@@ -86,18 +81,14 @@ export interface Provider {
 export interface CreateProviderInput {
   agentId: string;
   wallet: string;
+  name: string;
+  capabilities: CapabilityDeclaration[];
+  pricing: PricingDeclaration[];
   
-  // Backward compatible (required)
-  capabilities: string[];
-  pricing: Record<string, string>;
-  
-  // V2.0 explicit (optional)
-  name?: string;
+  /** Optional */
   description?: string;
   argumentHint?: string;
   avatarUrl?: string;
-  capabilityDetails?: CapabilityDeclaration[];
-  pricingDetails?: PricingDeclaration[];
   tags?: string[];
   languages?: string[];
   certifications?: string[];
@@ -108,23 +99,15 @@ export interface CreateProviderInput {
 export function createProvider(input: CreateProviderInput, id: string): Provider {
   const now = new Date();
   
-  // Determine schema version
-  const isV2 = !!(input.capabilityDetails || input.pricingDetails);
-  
   return {
     id,
     agentId: input.agentId,
-    // Backward compatible
-    capabilities: input.capabilities,
-    pricing: input.pricing,
-    // V2.0 fields
-    schemaVersion: isV2 ? '2.0' : undefined,
     name: input.name,
     description: input.description,
     argumentHint: input.argumentHint,
     avatarUrl: input.avatarUrl,
-    capabilityDetails: input.capabilityDetails,
-    pricingDetails: input.pricingDetails,
+    capabilities: input.capabilities,
+    pricing: input.pricing,
     tags: input.tags,
     languages: input.languages,
     wallet: input.wallet,
@@ -138,4 +121,14 @@ export function createProvider(input: CreateProviderInput, id: string): Provider
     registeredAt: now,
     lastSeen: now,
   };
+}
+
+/** Helper: Get all categories this provider supports */
+export function getProviderCategories(provider: Provider): string[] {
+  return [...new Set(provider.capabilities.map(c => c.category))];
+}
+
+/** Helper: Get pricing for a category */
+export function getProviderPricing(provider: Provider, category: string): PricingDeclaration | undefined {
+  return provider.pricing.find(p => p.category === category);
 }

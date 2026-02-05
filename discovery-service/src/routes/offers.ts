@@ -5,17 +5,18 @@
 import { Router, Request, Response } from 'express';
 import { intentStore, offerStore, providerStore } from '../store/memory.js';
 import { CreateOfferInput } from '../models/offer.js';
+import { getProviderCategories } from '../models/provider.js';
 
 const router = Router();
 
 /**
  * POST /api/v1/intents/:id/offers — Submit an offer for an intent
- * Body: { providerId, priceUsdc, estimatedDeliveryMinutes?, message? }
+ * Body: { providerId, priceUsdc, commitment, priceBreakdown?, qualifications? }
  */
 router.post('/intents/:id/offers', (req: Request, res: Response) => {
   try {
     const { id: intentId } = req.params;
-    const { providerId, priceUsdc, estimatedDeliveryMinutes, message } = req.body;
+    const { providerId, priceUsdc, commitment, priceBreakdown, qualifications } = req.body;
     
     // Validate intent exists and is active
     const intent = intentStore.get(intentId);
@@ -33,10 +34,19 @@ router.post('/intents/:id/offers', (req: Request, res: Response) => {
     }
     
     // Validate required fields
-    if (!providerId || !priceUsdc) {
+    if (!providerId || !priceUsdc || !commitment) {
       res.status(400).json({
         error: 'Missing required fields',
-        required: ['providerId', 'priceUsdc'],
+        required: ['providerId', 'priceUsdc', 'commitment'],
+      });
+      return;
+    }
+    
+    // Validate commitment
+    if (!commitment.outputFormat || !commitment.estimatedDelivery) {
+      res.status(400).json({
+        error: 'Invalid commitment',
+        required: ['commitment.outputFormat', 'commitment.estimatedDelivery'],
       });
       return;
     }
@@ -74,8 +84,9 @@ router.post('/intents/:id/offers', (req: Request, res: Response) => {
       intentId,
       providerId,
       priceUsdc,
-      estimatedDeliveryMinutes,
-      message,
+      commitment,
+      priceBreakdown,
+      qualifications,
     };
     
     const offer = offerStore.create(input);
@@ -116,7 +127,9 @@ router.get('/intents/:id/offers', (req: Request, res: Response) => {
         provider: provider ? {
           id: provider.id,
           agentId: provider.agentId,
-          capabilities: provider.capabilities,
+          name: provider.name,
+          categories: getProviderCategories(provider),
+          rating: provider.rating,
         } : null,
       };
     });
@@ -213,6 +226,7 @@ router.post('/intents/:id/accept', (req: Request, res: Response) => {
       provider: provider ? {
         id: provider.id,
         agentId: provider.agentId,
+        name: provider.name,
         wallet: provider.wallet,
       } : null,
     });

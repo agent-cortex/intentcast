@@ -11,17 +11,48 @@ const router = Router();
 
 /**
  * POST /api/v1/providers — Register a new provider
- * Body: { agentId, capabilities, pricing, wallet }
+ * Body: { agentId, name, capabilities, pricing, wallet, ... }
  */
 router.post('/', (req: Request, res: Response) => {
   try {
     const input: CreateProviderInput = req.body;
     
     // Validate required fields
-    if (!input.agentId || !input.capabilities || !input.wallet) {
+    const required = ['agentId', 'name', 'capabilities', 'pricing', 'wallet'];
+    const missing = required.filter(f => !input[f as keyof CreateProviderInput]);
+    
+    if (missing.length > 0) {
       res.status(400).json({
         error: 'Missing required fields',
-        required: ['agentId', 'capabilities', 'wallet'],
+        required,
+        missing,
+      });
+      return;
+    }
+    
+    // Validate capabilities array
+    if (!Array.isArray(input.capabilities) || input.capabilities.length === 0) {
+      res.status(400).json({
+        error: 'capabilities must be a non-empty array of CapabilityDeclaration',
+      });
+      return;
+    }
+    
+    // Validate each capability
+    for (const cap of input.capabilities) {
+      if (!cap.category || !cap.name || !cap.description || !cap.acceptsInputTypes || !cap.producesOutputFormats) {
+        res.status(400).json({
+          error: 'Invalid capability declaration',
+          required: ['category', 'name', 'description', 'acceptsInputTypes', 'producesOutputFormats'],
+        });
+        return;
+      }
+    }
+    
+    // Validate pricing array
+    if (!Array.isArray(input.pricing) || input.pricing.length === 0) {
+      res.status(400).json({
+        error: 'pricing must be a non-empty array of PricingDeclaration',
       });
       return;
     }
@@ -31,8 +62,10 @@ router.post('/', (req: Request, res: Response) => {
     if (existing) {
       // Update existing provider (re-registration = heartbeat)
       providerStore.update(existing.id, {
+        name: input.name,
+        description: input.description,
         capabilities: input.capabilities,
-        pricing: input.pricing || {},
+        pricing: input.pricing,
         wallet: input.wallet,
         status: 'online',
       });
@@ -48,10 +81,7 @@ router.post('/', (req: Request, res: Response) => {
     }
     
     // Create new provider
-    const provider = providerStore.create({
-      ...input,
-      pricing: input.pricing || {},
-    });
+    const provider = providerStore.create(input);
     
     console.log(`Provider registered: ${provider.id} (${input.agentId})`);
     
@@ -67,15 +97,15 @@ router.post('/', (req: Request, res: Response) => {
 
 /**
  * GET /api/v1/providers — List providers
- * Query: ?status=online&capability=research
+ * Query: ?status=online&category=research
  */
 router.get('/', (req: Request, res: Response) => {
   try {
-    const { status, capability } = req.query;
+    const { status, category } = req.query;
     
     const providers = providerStore.list({
       status: status as string | undefined,
-      capability: capability as string | undefined,
+      category: category as string | undefined,
     });
     
     res.json({
@@ -90,9 +120,6 @@ router.get('/', (req: Request, res: Response) => {
 
 /**
  * GET /api/v1/providers/match/:providerId — Get matching intents for a provider
- *
- * Note: This route must be declared before "/:id" otherwise Express will treat
- * "match" as an :id and swallow the request.
  */
 router.get('/match/:providerId', (req: Request, res: Response) => {
   try {
@@ -108,7 +135,7 @@ router.get('/match/:providerId', (req: Request, res: Response) => {
     
     res.json({
       providerId,
-      capabilities: provider.capabilities,
+      providerName: provider.name,
       matchCount: matches.length,
       matches,
     });
@@ -139,7 +166,7 @@ router.get('/:id', (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/v1/providers/stats — Get matching statistics
+ * GET /api/v1/providers/stats/overview — Get matching statistics
  */
 router.get('/stats/overview', (_req: Request, res: Response) => {
   try {
