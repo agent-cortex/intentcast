@@ -4,11 +4,12 @@
 
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { getStoreStats } from './store/memory.js';
+import { getStoreStats, providerStore } from './store/memory.js';
 import { intentsRouter } from './routes/intents.js';
 import { providersRouter } from './routes/providers.js';
 import { offersRouter } from './routes/offers.js';
 import { paymentsRouter } from './routes/payments.js';
+import { findMatchingIntents } from './services/matching.js';
 
 const app = express();
 
@@ -37,7 +38,7 @@ app.get('/', (_req: Request, res: Response) => {
     },
     stats,
     links: {
-      github: 'https://github.com/BrainDeadWorkers/intent-discovery',
+      github: 'https://github.com/agent-cortex/intentcast',
       basescan: 'https://sepolia.basescan.org',
     },
   });
@@ -66,6 +67,7 @@ app.get('/api/v1', (_req: Request, res: Response) => {
       'DELETE /api/v1/intents/:id',
       'GET /api/v1/providers',
       'POST /api/v1/providers',
+      'GET /api/v1/match/:providerId',
       'GET /api/v1/providers/match/:providerId',
       'POST /api/v1/intents/:id/offers',
       'GET /api/v1/intents/:id/offers',
@@ -76,10 +78,36 @@ app.get('/api/v1', (_req: Request, res: Response) => {
   });
 });
 
+// Match endpoint (canonical): GET /api/v1/match/:providerId
+// Kept for backwards compatibility with docs/skills.
+app.get('/api/v1/match/:providerId', (req: Request, res: Response) => {
+  try {
+    const { providerId } = req.params;
+
+    const provider = providerStore.get(providerId);
+    if (!provider) {
+      res.status(404).json({ error: 'Provider not found' });
+      return;
+    }
+
+    const matches = findMatchingIntents(providerId);
+
+    res.json({
+      providerId,
+      capabilities: provider.capabilities,
+      matchCount: matches.length,
+      matches,
+    });
+  } catch (error) {
+    console.error('Match intents error:', error);
+    res.status(500).json({ error: 'Failed to find matching intents' });
+  }
+});
+
 // Mount API routes
 app.use('/api/v1/intents', intentsRouter);
 app.use('/api/v1/providers', providersRouter);
-app.use('/api/v1', offersRouter);  // offers are nested under intents
+app.use('/api/v1', offersRouter); // offers are nested under intents
 app.use('/api/v1/payments', paymentsRouter);
 
 // Error handling middleware

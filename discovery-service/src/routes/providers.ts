@@ -89,27 +89,10 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/v1/providers/:id — Get single provider
- */
-router.get('/:id', (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const provider = providerStore.get(id);
-    
-    if (!provider) {
-      res.status(404).json({ error: 'Provider not found' });
-      return;
-    }
-    
-    res.json({ provider });
-  } catch (error) {
-    console.error('Get provider error:', error);
-    res.status(500).json({ error: 'Failed to get provider' });
-  }
-});
-
-/**
- * GET /api/v1/match/:providerId — Get matching intents for a provider
+ * GET /api/v1/providers/match/:providerId — Get matching intents for a provider
+ *
+ * Note: This route must be declared before "/:id" otherwise Express will treat
+ * "match" as an :id and swallow the request.
  */
 router.get('/match/:providerId', (req: Request, res: Response) => {
   try {
@@ -132,6 +115,26 @@ router.get('/match/:providerId', (req: Request, res: Response) => {
   } catch (error) {
     console.error('Match intents error:', error);
     res.status(500).json({ error: 'Failed to find matching intents' });
+  }
+});
+
+/**
+ * GET /api/v1/providers/:id — Get single provider
+ */
+router.get('/:id', (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const provider = providerStore.get(id);
+
+    if (!provider) {
+      res.status(404).json({ error: 'Provider not found' });
+      return;
+    }
+
+    res.json({ provider });
+  } catch (error) {
+    console.error('Get provider error:', error);
+    res.status(500).json({ error: 'Failed to get provider' });
   }
 });
 

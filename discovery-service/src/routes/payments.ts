@@ -5,7 +5,6 @@
 import { Router, Request, Response } from 'express';
 import { intentStore, offerStore, providerStore } from '../store/memory.js';
 import { executeTransfer, getBalance } from '../services/usdc.js';
-import { execSync } from 'child_process';
 
 const router = Router();
 
@@ -13,22 +12,18 @@ const router = Router();
 const SERVICE_WALLET = process.env.SERVICE_WALLET || '0xe08Ad6b0975222f410Eb2fa0e50c7Ee8FBe78F2D';
 
 /**
- * Get service wallet private key from pass
+ * Get service wallet private key from environment.
+ *
+ * This service is designed to run in serverless environments (e.g. Vercel), so
+ * we do not shell out to local secret stores at runtime.
  */
 function getServicePrivateKey(): string {
-  const pk = process.env.SERVICE_PRIVATE_KEY;
+  const pk = process.env.SERVICE_PRIVATE_KEY || process.env.SERVICE_WALLET_PRIVATE_KEY;
   if (pk) return pk;
-  
-  // Try to get from pass store
-  try {
-    const result = execSync('pass show evm-wallet/hackathon_dev/private_key', {
-      encoding: 'utf-8',
-      timeout: 5000,
-    }).trim();
-    return result;
-  } catch (error) {
-    throw new Error('Service wallet private key not available');
-  }
+
+  throw new Error(
+    'Service wallet private key not available. Set SERVICE_PRIVATE_KEY (or SERVICE_WALLET_PRIVATE_KEY) in the environment.'
+  );
 }
 
 /**

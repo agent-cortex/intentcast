@@ -111,23 +111,23 @@ WALLET_PRIVATE_KEY=<key> npx tsx scripts/release_payment.ts <intent_id> <amount>
 | `PORT` | Server port | 3001 |
 | `BASE_SEPOLIA_RPC` | RPC URL | https://sepolia.base.org |
 | `USDC_CONTRACT` | USDC address | 0x036CbD53842c5426634e7929541eC2318f3dCF7e |
-| `SERVICE_WALLET_ADDRESS` | Escrow wallet | - |
-| `SERVICE_WALLET_PRIVATE_KEY` | Escrow key (TESTNET ONLY) | - |
+| `SERVICE_WALLET` | Service/escrow wallet address | - |
+| `SERVICE_PRIVATE_KEY` | Service/escrow private key (TESTNET ONLY) | - |
+| `SERVICE_WALLET_PRIVATE_KEY` | Alias for `SERVICE_PRIVATE_KEY` | - |
 
 ## 🚢 Deployment
 
-### Landing Page (Vercel)
+### Vercel (Landing + API)
+
+This repo is designed to deploy as a single Vercel project:
+- Static landing page from `dist/`
+- API served via Vercel Functions under `api/`
 
 ```bash
-cd landing-page
 vercel --prod
 ```
 
 Auto-deploy: Connect this repo to Vercel via dashboard → Settings → Git Integration
-
-### Discovery Service
-
-Running as systemd service on home server, exposed via Tailscale Funnel.
 
 ## 📚 Resources
 

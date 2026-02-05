@@ -28,7 +28,7 @@ Environment:
   ESCROW_WALLET       Escrow wallet address (default: ${ESCROW_WALLET})
 
 Example:
-  WALLET_PRIVATE_KEY=$(pass show evm-wallet/hackathon_dev/private_key) \\
+  # export WALLET_PRIVATE_KEY="<your-private-key>" \\
     npx tsx scripts/broadcast_intent.ts translation 2.50 '{"source":"en","target":"es","words":500}' 48
 `);
 }
@@ -58,7 +58,7 @@ async function main() {
   const privateKey = process.env.WALLET_PRIVATE_KEY;
   if (!privateKey) {
     console.error('Error: WALLET_PRIVATE_KEY environment variable is required');
-    console.error('Get it from: pass show evm-wallet/hackathon_dev/private_key');
+    console.error('Set WALLET_PRIVATE_KEY in your environment (Base Sepolia testnet key).');
     process.exit(1);
   }
 

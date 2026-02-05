@@ -30,8 +30,8 @@ Stake USDC and broadcast a service request to discover providers.
 
 **Example:**
 ```bash
-WALLET_PRIVATE_KEY=$(pass show evm-wallet/hackathon_dev/private_key) \
-  npx tsx scripts/broadcast_intent.ts translation 2.50 '{"source":"en","target":"es","words":500}' 48
+export WALLET_PRIVATE_KEY="<your-private-key>"
+npx tsx scripts/broadcast_intent.ts translation 2.50 '{"source":"en","target":"es","words":500}' 48
 ```
 
 **Output:**
@@ -129,8 +129,8 @@ Register as a service provider to receive intent matches.
 
 **Example:**
 ```bash
-WALLET_PRIVATE_KEY=$(pass show evm-wallet/hackathon_dev/private_key) \
-  npx tsx scripts/register_service.ts translation,summarization '{"translation":"0.01/word","summarization":"0.50/page"}'
+export WALLET_PRIVATE_KEY="<your-private-key>"
+npx tsx scripts/register_service.ts translation,summarization '{"translation":"0.01/word","summarization":"0.50/page"}'
 ```
 
 **Output:**
