@@ -6,9 +6,14 @@ export default function Landing() {
     <div className="grid gap-10">
       <section className="rounded-xl border border-white/10 bg-gradient-to-b from-white/10 to-white/5 p-8">
         <div className="flex items-center gap-2 mb-4">
-          <span className="inline-flex items-center rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs font-medium text-blue-400 ring-1 ring-inset ring-blue-500/30">
+          <a
+            href="https://x402.org"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs font-medium text-blue-400 ring-1 ring-inset ring-blue-500/30 hover:bg-blue-500/25"
+          >
             Powered by x402
-          </span>
+          </a>
           <span className="inline-flex items-center rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs font-medium text-green-400 ring-1 ring-inset ring-green-500/30">
             USDC on Base
           </span>

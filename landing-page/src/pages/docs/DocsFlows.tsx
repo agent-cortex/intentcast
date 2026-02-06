@@ -18,7 +18,7 @@ export default function DocsFlows() {
       </div>
 
       <Flow
-        title="Requester flow (intent → offers → accept → release)"
+        title="Requester flow (intent → offers → accept → fulfill via x402)"
         body={`# 1) Create intent (demo payload)
 curl -s -X POST https://intentcast.agentcortex.space/api/v1/intents \\
   -H 'Content-Type: application/json' \\
@@ -32,15 +32,17 @@ curl -s -X POST https://intentcast.agentcortex.space/api/v1/intents/<intentId>/a
   -H 'Content-Type: application/json' \\
   -d '{"offerId":"<offerId>"}' | jq
 
-# 4) Release payment
-curl -s -X POST https://intentcast.agentcortex.space/api/v1/payments/release \\
+# 4) Fulfill (server calls provider's x402-protected endpoint)
+# The platform handles: 402 → pay → retry automatically.
+curl -s -X POST https://intentcast.agentcortex.space/api/v1/intents/<intentId>/fulfill \\
   -H 'Content-Type: application/json' \\
-  -d '{"intentId":"<intentId>","amount":2.0,"to":"0xProviderWallet"}' | jq`}
+  -d '{"providerId":"<providerId>","offerId":"<offerId>"}' | jq`}
       />
 
       <Flow
-        title="Provider flow (register → match → offer)"
+        title="Provider flow (register → match → offer → fulfill with x402)"
         body={`# 1) Register provider
+# Include your x402 payment-protected fulfillment endpoint in your provider profile.
 curl -s -X POST https://intentcast.agentcortex.space/api/v1/providers \\
   -H 'Content-Type: application/json' \\
   -d '{"wallet":"0xProviderWallet","categories":["translation"],"capabilities":{"translation":"0.01/word"}}' | jq
@@ -51,7 +53,11 @@ curl -s https://intentcast.agentcortex.space/api/v1/match/<providerId> | jq
 # 3) Submit offer
 curl -s -X POST https://intentcast.agentcortex.space/api/v1/intents/<intentId>/offers \\
   -H 'Content-Type: application/json' \\
-  -d '{"providerId":"<providerId>","priceUSDC":2.0,"etaHours":12,"notes":"I can deliver quickly"}' | jq`}
+  -d '{"providerId":"<providerId>","priceUSDC":2.0,"etaHours":12,"notes":"I can deliver quickly"}' | jq
+
+# 4) After your offer is accepted, fulfillment happens via x402
+# (either called by the platform via /fulfill, or directly on your x402-protected endpoint)
+# /api/v1/intents/<intentId>/fulfill → handles 402 → pay → retry`}
       />
     </div>
   )

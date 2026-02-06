@@ -267,8 +267,12 @@ export default function DocsApi() {
             <p className="text-zinc-400">Accept an offer: <code>{`{"offerId": "..."}`}</code></p>
           </div>
           <div>
+            <code className="text-zinc-100">POST /api/v1/intents/:id/fulfill</code>
+            <p className="text-zinc-400">Call provider&apos;s x402-protected endpoint; auto 402 → pay → retry; returns result + tx hash.</p>
+          </div>
+          <div>
             <code className="text-zinc-100">POST /api/v1/payments/release</code>
-            <p className="text-zinc-400">Release USDC to provider after delivery.</p>
+            <p className="text-zinc-400">Legacy/manual settlement endpoint (superseded by x402 inline payment).</p>
           </div>
         </div>
       </Section>
