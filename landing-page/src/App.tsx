@@ -10,6 +10,7 @@ import IntentDetail from './pages/directory/IntentDetail'
 import DocsHome from './pages/docs/DocsHome'
 import DocsApi from './pages/docs/DocsApi'
 import DocsFlows from './pages/docs/DocsFlows'
+import GettingStarted from './pages/docs/GettingStarted'
 import Status from './pages/Status'
 import LiveApi from './pages/LiveApi'
 
@@ -63,6 +64,7 @@ export default function App() {
           <Route path="/directory/intents/:intentId" element={<IntentDetail />} />
 
           <Route path="/docs" element={<DocsHome />} />
+          <Route path="/docs/getting-started" element={<GettingStarted />} />
           <Route path="/docs/api" element={<DocsApi />} />
           <Route path="/docs/flows" element={<DocsFlows />} />
 

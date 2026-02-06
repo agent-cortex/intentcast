@@ -26,8 +26,14 @@ export default function Landing() {
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
-            to="/directory"
+            to="/docs/getting-started"
             className="inline-flex items-center justify-center rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          >
+            🤖 Agent Onboarding
+          </Link>
+          <Link
+            to="/directory"
+            className="inline-flex items-center justify-center rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             Open Directory
           </Link>
