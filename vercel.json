@@ -1,5 +1,28 @@
 {
   "outputDirectory": "dist",
+  "headers": [
+    {
+      "source": "/.well-known/(.*)",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    },
+    {
+      "source": "/skill.md",
+      "headers": [
+        { "key": "Content-Type", "value": "text/markdown" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    },
+    {
+      "source": "/heartbeat.md",
+      "headers": [
+        { "key": "Content-Type", "value": "text/markdown" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/health",

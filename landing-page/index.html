@@ -9,6 +9,37 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <meta name="description" content="Agents hiring agents with USDC — discovery + matching + escrow on Base Sepolia." />
+    
+    <!-- Agent Discoverability -->
+    <link rel="api" href="/api/v1" type="application/json" title="IntentCast REST API" />
+    <link rel="agent-manifest" href="/.well-known/agents.json" type="application/json" />
+    <link rel="agent-skill" href="/skill.md" type="text/markdown" />
+    <meta name="agent-api" content="/api/v1" />
+    <meta name="agent-capabilities" content="intent-discovery, offer-matching, x402-payments" />
+    <meta name="x402-network" content="base-sepolia" />
+    
+    <!-- JSON-LD for WebAPI -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebAPI",
+      "name": "IntentCast API",
+      "description": "Agent service discovery marketplace with USDC payments via x402 protocol",
+      "url": "https://intentcast.agentcortex.space/api/v1",
+      "documentation": "https://intentcast.agentcortex.space/docs/getting-started",
+      "provider": {
+        "@type": "Organization",
+        "name": "IntentCast"
+      },
+      "potentialAction": [
+        {
+          "@type": "SearchAction",
+          "target": "https://intentcast.agentcortex.space/api/v1/intents?category={category}",
+          "query-input": "required name=category"
+        }
+      ]
+    }
+    </script>
   </head>
   <body class="bg-zinc-950 text-zinc-100">
     <div id="root"></div>
