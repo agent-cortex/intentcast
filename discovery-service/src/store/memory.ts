@@ -71,7 +71,7 @@ export const providerStore = {
     return providers.get(id);
   },
 
-  async list(filter?: { status?: string; category?: string }): Promise<Provider[]> {
+  async list(filter?: { status?: string; category?: string; x402Enabled?: boolean }): Promise<Provider[]> {
     let result = Array.from(providers.values());
 
     if (filter?.status) {
@@ -81,8 +81,15 @@ export const providerStore = {
       const cat = filter.category;
       result = result.filter((p) => getProviderCategories(p).includes(cat));
     }
+    if (filter?.x402Enabled === true) {
+      result = result.filter((p) => p.x402?.enabled === true);
+    }
 
     return result;
+  },
+
+  async listX402Enabled(): Promise<Provider[]> {
+    return this.list({ x402Enabled: true });
   },
 
   async update(id: string, updates: Partial<Provider>): Promise<Provider | undefined> {

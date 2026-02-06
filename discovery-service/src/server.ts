@@ -18,6 +18,7 @@ import { asyncHandler } from './utils/asyncHandler.js';
 import { Errors, AppError } from './utils/errors.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { walletAuthForMutations } from './middleware/auth.js';
+import { fulfillIntent } from './x402/service.js';
 
 const app = express();
 
@@ -155,6 +156,17 @@ app.use('/api/v1/intents', writeRateLimit, intentsRouter);
 app.use('/api/v1/providers', writeRateLimit, providersRouter);
 app.use('/api/v1', writeRateLimit, offersRouter); // offers are nested under intents
 app.use('/api/v1/payments', writeRateLimit, paymentsRouter);
+
+// x402 fulfillment route (pay provider inline via HTTP 402 flow)
+app.post(
+  '/api/v1/intents/:id/fulfill',
+  writeRateLimit,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id: intentId } = req.params;
+    const result = await fulfillIntent(intentId, req.body || {});
+    res.json({ success: true, ...result });
+  })
+);
 
 // 404 handler (consistent error shape)
 app.use((req: Request, res: Response) => {

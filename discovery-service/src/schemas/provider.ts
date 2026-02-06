@@ -51,6 +51,17 @@ export const pricingDeclarationSchema = z
   })
   .strict();
 
+export const x402ConfigSchema = z
+  .object({
+    enabled: z.boolean(),
+    network: z.string().min(1),
+    scheme: z.literal('exact'),
+    payTo: z.string().min(1),
+    defaultPrice: z.string().min(1).optional(),
+    endpoints: z.array(z.string().min(1)).optional(),
+  })
+  .strict();
+
 export const createProviderInputSchema = z
   .object({
     agentId: z.string().min(1),
@@ -67,6 +78,16 @@ export const createProviderInputSchema = z
     certifications: z.array(z.string()).optional(),
     websiteUrl: z.string().url().optional(),
     apiEndpoint: z.string().url().optional(),
+
+    x402: x402ConfigSchema.optional(),
+  })
+  .strict();
+
+export const updateProviderInputSchema = createProviderInputSchema
+  .omit({ agentId: true })
+  .partial()
+  .extend({
+    status: z.enum(['online', 'offline', 'busy', 'maintenance']).optional(),
   })
   .strict();
 
@@ -74,5 +95,6 @@ export const listProvidersQuerySchema = z
   .object({
     status: z.string().optional(),
     category: z.string().optional(),
+    x402: z.coerce.boolean().optional(),
   })
   .strict();

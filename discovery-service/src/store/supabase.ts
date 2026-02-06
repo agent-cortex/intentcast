@@ -67,6 +67,7 @@ type ProviderRow = {
   certifications: string[] | null;
   website_url: string | null;
   api_endpoint: string | null;
+  x402: any | null;
   registered_at: string;
   last_seen: string;
   created_at: string;
@@ -133,6 +134,7 @@ function toProvider(row: ProviderRow): Provider {
     certifications: row.certifications ?? undefined,
     websiteUrl: row.website_url ?? undefined,
     apiEndpoint: row.api_endpoint ?? undefined,
+    x402: row.x402 ?? undefined,
     registeredAt: new Date(row.registered_at),
     lastSeen: new Date(row.last_seen),
   };
@@ -279,6 +281,7 @@ export const providerStore = {
       certifications: provider.certifications,
       website_url: provider.websiteUrl,
       api_endpoint: provider.apiEndpoint,
+      x402: provider.x402,
       registered_at: provider.registeredAt.toISOString(),
       last_seen: provider.lastSeen.toISOString(),
     });
@@ -293,16 +296,24 @@ export const providerStore = {
     return toProvider(data as any);
   },
 
-  async list(filter?: { status?: string; category?: string }): Promise<Provider[]> {
+  async list(filter?: { status?: string; category?: string; x402Enabled?: boolean }): Promise<Provider[]> {
     let query = supabase.from('providers').select('*');
     if (filter?.status) query = query.eq('status', filter.status);
     // capabilities is an array of objects; contains works with jsonb.
     if (filter?.category) query = query.contains('capabilities', [{ category: filter.category }]);
+    if (filter?.x402Enabled === true) {
+      // PostgREST supports JSON operators in filters.
+      query = query.eq('x402->>enabled', 'true');
+    }
 
     const { data, error } = await query.order('registered_at', { ascending: false });
     if (error) throw new Error(`Failed to list providers: ${error.message}`);
 
     return (data ?? []).map((r) => toProvider(r as any));
+  },
+
+  async listX402Enabled(): Promise<Provider[]> {
+    return this.list({ x402Enabled: true });
   },
 
   async update(id: string, updates: Partial<Provider>): Promise<Provider | undefined> {
@@ -326,6 +337,7 @@ export const providerStore = {
     if (updates.certifications !== undefined) updateData.certifications = updates.certifications;
     if (updates.websiteUrl !== undefined) updateData.website_url = updates.websiteUrl;
     if (updates.apiEndpoint !== undefined) updateData.api_endpoint = updates.apiEndpoint;
+    if (updates.x402 !== undefined) updateData.x402 = updates.x402;
 
     const { data, error } = await supabase
       .from('providers')

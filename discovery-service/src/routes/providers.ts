@@ -6,7 +6,7 @@ import { Router, Request, Response } from 'express';
 import { providerStore } from '../store/index.js';
 import { findMatchingIntents, getMatchStats } from '../services/matching.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
-import { createProviderInputSchema, listProvidersQuerySchema } from '../schemas/provider.js';
+import { createProviderInputSchema, listProvidersQuerySchema, updateProviderInputSchema } from '../schemas/provider.js';
 import { CreateProviderInput } from '../models/provider.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AppError } from '../utils/errors.js';
@@ -68,17 +68,60 @@ router.get(
   '/',
   validateQuery(listProvidersQuerySchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { status, category } = req.query as { status?: string; category?: string };
+    const { status, category, x402 } = req.query as { status?: string; category?: string; x402?: boolean };
 
     const providers = await providerStore.list({
       status,
       category,
+      x402Enabled: x402 === true,
     });
 
     res.json({
       count: providers.length,
       providers,
     });
+  })
+);
+
+/**
+ * PUT /api/v1/providers/:id — Update a provider
+ */
+router.put(
+  '/:id',
+  validateBody(updateProviderInputSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const existing = await providerStore.get(id);
+
+    if (!existing) {
+      throw new AppError({
+        code: 'NOT_FOUND',
+        statusCode: 404,
+        message: 'Provider not found',
+        details: { id },
+      });
+    }
+
+    const updates = req.body as any;
+
+    const updated = await providerStore.update(id, {
+      name: updates.name,
+      description: updates.description,
+      argumentHint: updates.argumentHint,
+      avatarUrl: updates.avatarUrl,
+      capabilities: updates.capabilities,
+      pricing: updates.pricing,
+      tags: updates.tags,
+      languages: updates.languages,
+      wallet: updates.wallet,
+      certifications: updates.certifications,
+      websiteUrl: updates.websiteUrl,
+      apiEndpoint: updates.apiEndpoint,
+      x402: updates.x402,
+      status: updates.status,
+    });
+
+    res.json({ success: true, provider: updated });
   })
 );
 

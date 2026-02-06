@@ -6,6 +6,7 @@ import { Router, Request, Response } from 'express';
 import { intentStore } from '../store/index.js';
 import { verifyStake } from '../services/usdc.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
+import { fulfillIntent } from '../x402/service.js';
 import { createIntentInputSchema, listIntentsQuerySchema } from '../schemas/intent.js';
 import { CreateIntentInput } from '../models/intent.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -127,6 +128,34 @@ router.delete(
       success: true,
       message: 'Intent cancelled',
       intent: await intentStore.get(id),
+    });
+  })
+);
+
+/**
+ * POST /api/v1/intents/:id/fulfill — Fulfill an accepted intent via x402 payment
+ * Body: { input?: any, endpoint?: string }
+ * 
+ * This calls the provider's x402-protected endpoint and pays them automatically.
+ * Requires SERVICE_WALLET_PRIVATE_KEY env var.
+ */
+router.post(
+  '/:id/fulfill',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { input, endpoint } = req.body as { input?: unknown; endpoint?: string };
+
+    const result = await fulfillIntent(id, { input, endpoint });
+
+    res.json({
+      success: result.x402.success,
+      intentId: result.intentId,
+      providerId: result.providerId,
+      offerId: result.offerId,
+      providerEndpoint: result.providerEndpoint,
+      result: result.x402.data,
+      paymentTxHash: result.x402.paymentTxHash,
+      error: result.x402.error,
     });
   })
 );

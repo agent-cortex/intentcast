@@ -42,6 +42,34 @@ export interface PricingDeclaration {
   volumeDiscounts?: Array<{ minUnits: number; discountPercent: number }>;
 }
 
+/**
+ * x402 payment declaration (Coinbase x402 HTTP payments)
+ */
+export interface X402Config {
+  enabled: boolean;
+  /** CAIP-2 network id used by x402, e.g. "eip155:8453" (Base) or "eip155:84532" (Base Sepolia) */
+  network: string;
+  scheme: 'exact';
+  /** Provider wallet address */
+  payTo: string;
+  /** Default price string, e.g. "$0.10" */
+  defaultPrice?: string;
+  /** Protected endpoints, e.g. ["POST /fulfill"] */
+  endpoints?: string[];
+}
+
+export interface X402Declaration {
+  enabled: boolean;
+  /** CAIP-2 network id, e.g. eip155:84532 */
+  network: string;
+  /** Payment scheme (typically "exact") */
+  scheme?: string;
+  /** Optional default price ("$0.10" etc). Actual price may still be per-offer. */
+  defaultPrice?: string;
+  /** Optional endpoint patterns (e.g. ["POST /fulfill"]) */
+  endpoints?: string[];
+}
+
 export interface Provider {
   id: string;
   agentId: string;
@@ -73,6 +101,9 @@ export interface Provider {
   certifications?: string[];
   websiteUrl?: string;
   apiEndpoint?: string;
+
+  /** Optional x402 paywall declaration for provider endpoints */
+  x402?: X402Config;
   
   registeredAt: Date;
   lastSeen: Date;
@@ -94,6 +125,9 @@ export interface CreateProviderInput {
   certifications?: string[];
   websiteUrl?: string;
   apiEndpoint?: string;
+
+  /** Optional x402 paywall declaration for provider endpoints */
+  x402?: X402Config;
 }
 
 export function createProvider(input: CreateProviderInput, id: string): Provider {
@@ -118,6 +152,7 @@ export function createProvider(input: CreateProviderInput, id: string): Provider
     certifications: input.certifications,
     websiteUrl: input.websiteUrl,
     apiEndpoint: input.apiEndpoint,
+    x402: input.x402,
     registeredAt: now,
     lastSeen: now,
   };
