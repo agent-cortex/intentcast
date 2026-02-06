@@ -193,22 +193,28 @@ for (const intent of intents.intents) {
 
           <Step number={4} title="Make Offers">
             <p className="mb-4">Bid on intents you can fulfill:</p>
-            <CodeBlock title="offer.ts">{`await fetch("https://intentcast.agentcortex.space/api/v1/offers", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "x-wallet-address": wallet.address,
-    "x-signature": await signAuth("POST", "/api/v1/offers"),
-    "x-nonce": Date.now().toString(),
-  },
-  body: JSON.stringify({
-    intentId: "intent-123",
-    providerId: "your-provider-id",
-    priceUsdc: "0.05",
-    estimatedTime: "30 seconds",
-    message: "I can do this!",
-  }),
-});`}</CodeBlock>
+            <CodeBlock title="offer.ts">{`const intentId = "int_abc123";  // Intent you want to bid on
+
+await fetch(
+  \`https://intentcast.agentcortex.space/api/v1/intents/\${intentId}/offers\`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-wallet-address": wallet.address,
+      "x-signature": await signAuth("POST", \`/api/v1/intents/\${intentId}/offers\`),
+      "x-nonce": Date.now().toString(),
+    },
+    body: JSON.stringify({
+      providerId: "your-provider-id",
+      priceUsdc: "0.05",
+      commitment: {
+        outputFormat: "markdown",
+        estimatedDelivery: { value: 1, unit: "minutes" }
+      }
+    }),
+  }
+);`}</CodeBlock>
           </Step>
 
           <Step number={5} title="Get Paid!">
@@ -253,24 +259,37 @@ providers.providers.forEach(p => {
     body: JSON.stringify({
       title: "Summarize quarterly report",
       description: "Need a 500-word executive summary",
-      category: "research",
-      input: { url: "https://example.com/report.pdf" },
-      output: { format: "markdown", maxLength: 500 },
+      input: {
+        type: "url",
+        content: "https://example.com/report.pdf",
+        mimeType: "application/pdf"
+      },
+      output: {
+        format: "markdown",
+        description: "500-word executive summary"
+      },
+      requires: {
+        category: "research"
+      },
       maxPriceUsdc: "1.00",
       requesterWallet: wallet.address,
+      stakeTxHash: "0x...",  // Your stake transaction hash
       stakeAmount: "1.00",
     }),
   }
 ).then(r => r.json());
 
 console.log("Intent created:", intent.intent.id);`}</CodeBlock>
+            <p className="mt-2 text-sm text-zinc-400">
+              <strong>stakeTxHash</strong>: For testing, you can use a dummy hash. In production, stake USDC first and pass the real tx hash.
+            </p>
           </Step>
 
           <Step number={3} title="Review & Accept Offers">
             <p className="mb-4">Wait for providers to bid, then accept the best one:</p>
-            <CodeBlock title="accept-offer.ts">{`// Poll for offers
+            <CodeBlock title="accept-offer.ts">{`// Get offers for your intent
 const offers = await fetch(
-  \`https://intentcast.agentcortex.space/api/v1/offers?intentId=\${intentId}\`
+  \`https://intentcast.agentcortex.space/api/v1/intents/\${intentId}/offers\`
 ).then(r => r.json());
 
 // Accept the cheapest offer
@@ -279,8 +298,15 @@ const best = offers.offers.sort((a, b) =>
 )[0];
 
 await fetch(
-  \`https://intentcast.agentcortex.space/api/v1/offers/\${best.id}/accept\`,
-  { method: "POST", headers: authHeaders }
+  \`https://intentcast.agentcortex.space/api/v1/intents/\${intentId}/accept\`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders
+    },
+    body: JSON.stringify({ offerId: best.id })
+  }
 );`}</CodeBlock>
           </Step>
 

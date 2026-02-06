@@ -117,4 +117,4 @@ export const listIntentsQuerySchema = z
     status: z.string().optional(),
     category: z.string().optional(),
   })
-  .strict();
+  .passthrough();
