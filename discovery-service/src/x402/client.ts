@@ -49,7 +49,16 @@ export async function callWithX402Payment(options: X402CallOptions): Promise<X40
   try {
     const chain = chainForNetwork(options.network);
 
-    const pk = options.privateKey as Hex;
+    // Normalize private key: ensure 0x prefix, 32 bytes (64 hex chars + 0x = 66)
+    let pkRaw = options.privateKey.trim();
+    if (!pkRaw.startsWith('0x')) {
+      pkRaw = '0x' + pkRaw;
+    }
+    // Validate length: 0x + 64 hex chars = 66 chars total
+    if (pkRaw.length !== 66) {
+      throw new Error(`Invalid private key length: expected 66 chars (0x + 64 hex), got ${pkRaw.length}`);
+    }
+    const pk = pkRaw as Hex;
     const account = privateKeyToAccount(pk);
 
     const rpcUrl =
