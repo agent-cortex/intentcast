@@ -3,7 +3,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { intentStore, offerStore, providerStore } from '../store/memory.js';
+import { intentStore, offerStore, providerStore } from '../store/index.js';
 import { executeTransfer, getBalance } from '../services/usdc.js';
 
 const router = Router();
@@ -33,7 +33,7 @@ function getServicePrivateKey(): string {
 router.post('/release', async (req: Request, res: Response) => {
   try {
     const { intentId, confirmCompletion } = req.body;
-    
+
     // Validate required fields
     if (!intentId) {
       res.status(400).json({
@@ -41,7 +41,7 @@ router.post('/release', async (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     if (!confirmCompletion) {
       res.status(400).json({
         error: 'Must confirm completion',
@@ -49,14 +49,14 @@ router.post('/release', async (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     // Validate intent
-    const intent = intentStore.get(intentId);
+    const intent = await intentStore.get(intentId);
     if (!intent) {
       res.status(404).json({ error: 'Intent not found' });
       return;
     }
-    
+
     if (intent.status !== 'matched') {
       res.status(400).json({
         error: 'Cannot release payment',
@@ -64,33 +64,33 @@ router.post('/release', async (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     if (!intent.acceptedOfferId) {
       res.status(400).json({
         error: 'No accepted offer for this intent',
       });
       return;
     }
-    
+
     // Get the accepted offer
-    const offer = offerStore.get(intent.acceptedOfferId);
+    const offer = await offerStore.get(intent.acceptedOfferId);
     if (!offer) {
       res.status(500).json({ error: 'Accepted offer not found' });
       return;
     }
-    
+
     // Get provider wallet
-    const provider = providerStore.get(offer.providerId);
+    const provider = await providerStore.get(offer.providerId);
     if (!provider) {
       res.status(500).json({ error: 'Provider not found' });
       return;
     }
-    
+
     const paymentAmount = offer.priceUsdc;
     const providerWallet = provider.wallet;
-    
+
     console.log(`Releasing payment: ${paymentAmount} USDC to ${providerWallet}`);
-    
+
     // Check service wallet balance
     const balance = await getBalance(SERVICE_WALLET);
     if (parseFloat(balance) < parseFloat(paymentAmount)) {
@@ -101,7 +101,7 @@ router.post('/release', async (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     // Get private key and execute transfer
     let privateKey: string;
     try {
@@ -113,9 +113,9 @@ router.post('/release', async (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     const result = await executeTransfer(providerWallet, paymentAmount, privateKey);
-    
+
     if (!result.success) {
       res.status(500).json({
         error: 'Payment transfer failed',
@@ -123,12 +123,12 @@ router.post('/release', async (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     // Update intent status to completed
-    intentStore.update(intentId, { status: 'completed' });
-    
+    await intentStore.update(intentId, { status: 'completed' });
+
     console.log(`Payment released: ${result.txHash}`);
-    
+
     res.json({
       success: true,
       payment: {
@@ -141,7 +141,7 @@ router.post('/release', async (req: Request, res: Response) => {
         network: 'base-sepolia',
         txHash: result.txHash,
       },
-      intent: intentStore.get(intentId),
+      intent: await intentStore.get(intentId),
     });
   } catch (error) {
     console.error('Release payment error:', error);
@@ -155,7 +155,7 @@ router.post('/release', async (req: Request, res: Response) => {
 router.get('/balance', async (_req: Request, res: Response) => {
   try {
     const balance = await getBalance(SERVICE_WALLET);
-    
+
     res.json({
       wallet: SERVICE_WALLET,
       balance,

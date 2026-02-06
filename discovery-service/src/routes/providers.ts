@@ -3,7 +3,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { providerStore } from '../store/memory.js';
+import { providerStore } from '../store/index.js';
 import { findMatchingIntents, getMatchStats } from '../services/matching.js';
 import { CreateProviderInput } from '../models/provider.js';
 
@@ -13,14 +13,14 @@ const router = Router();
  * POST /api/v1/providers — Register a new provider
  * Body: { agentId, name, capabilities, pricing, wallet, ... }
  */
-router.post('/', (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     const input: CreateProviderInput = req.body;
-    
+
     // Validate required fields
     const required = ['agentId', 'name', 'capabilities', 'pricing', 'wallet'];
-    const missing = required.filter(f => !input[f as keyof CreateProviderInput]);
-    
+    const missing = required.filter((f) => !input[f as keyof CreateProviderInput]);
+
     if (missing.length > 0) {
       res.status(400).json({
         error: 'Missing required fields',
@@ -29,7 +29,7 @@ router.post('/', (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     // Validate capabilities array
     if (!Array.isArray(input.capabilities) || input.capabilities.length === 0) {
       res.status(400).json({
@@ -37,7 +37,7 @@ router.post('/', (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     // Validate each capability
     for (const cap of input.capabilities) {
       if (!cap.category || !cap.name || !cap.description || !cap.acceptsInputTypes || !cap.producesOutputFormats) {
@@ -48,7 +48,7 @@ router.post('/', (req: Request, res: Response) => {
         return;
       }
     }
-    
+
     // Validate pricing array
     if (!Array.isArray(input.pricing) || input.pricing.length === 0) {
       res.status(400).json({
@@ -56,12 +56,12 @@ router.post('/', (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     // Check for existing provider with same agentId
-    const existing = providerStore.getByAgentId(input.agentId);
+    const existing = await providerStore.getByAgentId(input.agentId);
     if (existing) {
       // Update existing provider (re-registration = heartbeat)
-      providerStore.update(existing.id, {
+      await providerStore.update(existing.id, {
         name: input.name,
         description: input.description,
         capabilities: input.capabilities,
@@ -69,22 +69,22 @@ router.post('/', (req: Request, res: Response) => {
         wallet: input.wallet,
         status: 'online',
       });
-      
+
       console.log(`Provider updated: ${existing.id} (${input.agentId})`);
-      
+
       res.json({
         success: true,
         message: 'Provider updated',
-        provider: providerStore.get(existing.id),
+        provider: await providerStore.get(existing.id),
       });
       return;
     }
-    
+
     // Create new provider
-    const provider = providerStore.create(input);
-    
+    const provider = await providerStore.create(input);
+
     console.log(`Provider registered: ${provider.id} (${input.agentId})`);
-    
+
     res.status(201).json({
       success: true,
       provider,
@@ -99,15 +99,15 @@ router.post('/', (req: Request, res: Response) => {
  * GET /api/v1/providers — List providers
  * Query: ?status=online&category=research
  */
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const { status, category } = req.query;
-    
-    const providers = providerStore.list({
+
+    const providers = await providerStore.list({
       status: status as string | undefined,
       category: category as string | undefined,
     });
-    
+
     res.json({
       count: providers.length,
       providers,
@@ -121,18 +121,18 @@ router.get('/', (req: Request, res: Response) => {
 /**
  * GET /api/v1/providers/match/:providerId — Get matching intents for a provider
  */
-router.get('/match/:providerId', (req: Request, res: Response) => {
+router.get('/match/:providerId', async (req: Request, res: Response) => {
   try {
     const { providerId } = req.params;
-    
-    const provider = providerStore.get(providerId);
+
+    const provider = await providerStore.get(providerId);
     if (!provider) {
       res.status(404).json({ error: 'Provider not found' });
       return;
     }
-    
-    const matches = findMatchingIntents(providerId);
-    
+
+    const matches = await findMatchingIntents(providerId);
+
     res.json({
       providerId,
       providerName: provider.name,
@@ -148,10 +148,10 @@ router.get('/match/:providerId', (req: Request, res: Response) => {
 /**
  * GET /api/v1/providers/:id — Get single provider
  */
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const provider = providerStore.get(id);
+    const provider = await providerStore.get(id);
 
     if (!provider) {
       res.status(404).json({ error: 'Provider not found' });
@@ -168,9 +168,9 @@ router.get('/:id', (req: Request, res: Response) => {
 /**
  * GET /api/v1/providers/stats/overview — Get matching statistics
  */
-router.get('/stats/overview', (_req: Request, res: Response) => {
+router.get('/stats/overview', async (_req: Request, res: Response) => {
   try {
-    const stats = getMatchStats();
+    const stats = await getMatchStats();
     res.json({ stats });
   } catch (error) {
     console.error('Match stats error:', error);
@@ -181,25 +181,25 @@ router.get('/stats/overview', (_req: Request, res: Response) => {
 /**
  * DELETE /api/v1/providers/:id — Unregister/offline a provider
  */
-router.delete('/:id', (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const provider = providerStore.get(id);
-    
+    const provider = await providerStore.get(id);
+
     if (!provider) {
       res.status(404).json({ error: 'Provider not found' });
       return;
     }
-    
+
     // Mark as offline rather than delete
-    providerStore.update(id, { status: 'offline' });
-    
+    await providerStore.update(id, { status: 'offline' });
+
     console.log(`Provider offline: ${id}`);
-    
+
     res.json({
       success: true,
       message: 'Provider marked offline',
-      provider: providerStore.get(id),
+      provider: await providerStore.get(id),
     });
   } catch (error) {
     console.error('Offline provider error:', error);

@@ -14,96 +14,96 @@ const offers = new Map<string, Offer>();
 
 // Intent CRUD
 export const intentStore = {
-  create(input: CreateIntentInput): Intent {
+  async create(input: CreateIntentInput): Promise<Intent> {
     const id = `int_${uuidv4().slice(0, 8)}`;
     const intent = createIntent(input, id);
     intents.set(id, intent);
     return intent;
   },
 
-  get(id: string): Intent | undefined {
+  async get(id: string): Promise<Intent | undefined> {
     return intents.get(id);
   },
 
-  list(filter?: { status?: string; category?: string }): Intent[] {
+  async list(filter?: { status?: string; category?: string }): Promise<Intent[]> {
     let result = Array.from(intents.values());
-    
+
     if (filter?.status) {
-      result = result.filter(i => i.status === filter.status);
+      result = result.filter((i) => i.status === filter.status);
     }
     if (filter?.category) {
-      result = result.filter(i => i.requires.category === filter.category);
+      result = result.filter((i) => i.requires.category === filter.category);
     }
-    
+
     return result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   },
 
-  update(id: string, updates: Partial<Intent>): Intent | undefined {
+  async update(id: string, updates: Partial<Intent>): Promise<Intent | undefined> {
     const intent = intents.get(id);
     if (!intent) return undefined;
-    
+
     const updated = { ...intent, ...updates, updatedAt: new Date() };
     intents.set(id, updated);
     return updated;
   },
 
-  delete(id: string): boolean {
+  async delete(id: string): Promise<boolean> {
     return intents.delete(id);
   },
 
-  getByWallet(wallet: string): Intent[] {
+  async getByWallet(wallet: string): Promise<Intent[]> {
     return Array.from(intents.values()).filter(
-      i => i.requesterWallet.toLowerCase() === wallet.toLowerCase()
+      (i) => i.requesterWallet.toLowerCase() === wallet.toLowerCase()
     );
   },
 };
 
 // Provider CRUD
 export const providerStore = {
-  create(input: CreateProviderInput): Provider {
+  async create(input: CreateProviderInput): Promise<Provider> {
     const id = `prov_${uuidv4().slice(0, 8)}`;
     const provider = createProvider(input, id);
     providers.set(id, provider);
     return provider;
   },
 
-  get(id: string): Provider | undefined {
+  async get(id: string): Promise<Provider | undefined> {
     return providers.get(id);
   },
 
-  list(filter?: { status?: string; category?: string }): Provider[] {
+  async list(filter?: { status?: string; category?: string }): Promise<Provider[]> {
     let result = Array.from(providers.values());
-    
+
     if (filter?.status) {
-      result = result.filter(p => p.status === filter.status);
+      result = result.filter((p) => p.status === filter.status);
     }
     if (filter?.category) {
       const cat = filter.category;
-      result = result.filter(p => getProviderCategories(p).includes(cat));
+      result = result.filter((p) => getProviderCategories(p).includes(cat));
     }
-    
+
     return result;
   },
 
-  update(id: string, updates: Partial<Provider>): Provider | undefined {
+  async update(id: string, updates: Partial<Provider>): Promise<Provider | undefined> {
     const provider = providers.get(id);
     if (!provider) return undefined;
-    
+
     const updated = { ...provider, ...updates, lastSeen: new Date() };
     providers.set(id, updated);
     return updated;
   },
 
-  delete(id: string): boolean {
+  async delete(id: string): Promise<boolean> {
     return providers.delete(id);
   },
 
-  getByAgentId(agentId: string): Provider | undefined {
-    return Array.from(providers.values()).find(p => p.agentId === agentId);
+  async getByAgentId(agentId: string): Promise<Provider | undefined> {
+    return Array.from(providers.values()).find((p) => p.agentId === agentId);
   },
 
-  getByCategory(category: string): Provider[] {
-    return Array.from(providers.values()).filter(p =>
+  async getByCategory(category: string): Promise<Provider[]> {
+    return Array.from(providers.values()).filter((p) =>
       getProviderCategories(p).includes(category)
     );
   },
@@ -111,56 +111,56 @@ export const providerStore = {
 
 // Offer CRUD
 export const offerStore = {
-  create(input: CreateOfferInput): Offer {
+  async create(input: CreateOfferInput): Promise<Offer> {
     const id = `off_${uuidv4().slice(0, 8)}`;
     const offer = createOffer(input, id);
     offers.set(id, offer);
     return offer;
   },
 
-  get(id: string): Offer | undefined {
+  async get(id: string): Promise<Offer | undefined> {
     return offers.get(id);
   },
 
-  listByIntent(intentId: string): Offer[] {
+  async listByIntent(intentId: string): Promise<Offer[]> {
     return Array.from(offers.values())
-      .filter(o => o.intentId === intentId)
+      .filter((o) => o.intentId === intentId)
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   },
 
-  listByProvider(providerId: string): Offer[] {
+  async listByProvider(providerId: string): Promise<Offer[]> {
     return Array.from(offers.values())
-      .filter(o => o.providerId === providerId)
+      .filter((o) => o.providerId === providerId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   },
 
-  update(id: string, updates: Partial<Offer>): Offer | undefined {
+  async update(id: string, updates: Partial<Offer>): Promise<Offer | undefined> {
     const offer = offers.get(id);
     if (!offer) return undefined;
-    
+
     const updated = { ...offer, ...updates, updatedAt: new Date() };
     offers.set(id, updated);
     return updated;
   },
 
-  delete(id: string): boolean {
+  async delete(id: string): Promise<boolean> {
     return offers.delete(id);
   },
 };
 
 // Store stats for health check
-export function getStoreStats() {
+export async function getStoreStats() {
   return {
     intents: intents.size,
     providers: providers.size,
     offers: offers.size,
-    activeIntents: Array.from(intents.values()).filter(i => i.status === 'active').length,
-    onlineProviders: Array.from(providers.values()).filter(p => p.status === 'online').length,
+    activeIntents: Array.from(intents.values()).filter((i) => i.status === 'active').length,
+    onlineProviders: Array.from(providers.values()).filter((p) => p.status === 'online').length,
   };
 }
 
 // Clear all data (for testing)
-export function clearStore() {
+export async function clearStore() {
   intents.clear();
   providers.clear();
   offers.clear();

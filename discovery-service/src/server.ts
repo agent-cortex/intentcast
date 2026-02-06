@@ -4,7 +4,7 @@
 
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { getStoreStats, providerStore } from './store/memory.js';
+import { getStoreStats, providerStore } from './store/index.js';
 import { intentsRouter } from './routes/intents.js';
 import { providersRouter } from './routes/providers.js';
 import { offersRouter } from './routes/offers.js';
@@ -26,8 +26,8 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 });
 
 // Root endpoint - API info
-app.get('/', (_req: Request, res: Response) => {
-  const stats = getStoreStats();
+app.get('/', async (_req: Request, res: Response) => {
+  const stats = await getStoreStats();
   res.json({
     name: 'Intent Discovery Service',
     description: 'Agent Service Discovery via Intent Broadcasting + USDC',
@@ -47,8 +47,8 @@ app.get('/', (_req: Request, res: Response) => {
 });
 
 // Health check endpoint
-app.get('/health', (_req: Request, res: Response) => {
-  const stats = getStoreStats();
+app.get('/health', async (_req: Request, res: Response) => {
+  const stats = await getStoreStats();
   res.json({
     status: 'ok',
     service: 'intent-discovery',
@@ -74,47 +74,28 @@ app.get('/api/v1', (_req: Request, res: Response) => {
     description: 'IntentCast API — Agent Service Discovery + USDC Escrow',
     docs: 'https://intentcast.agentcortex.space/docs/api',
     endpoints: {
-      categories: [
-        'GET /api/v1/categories',
-        'GET /api/v1/categories/:id',
-      ],
-      intents: [
-        'GET /api/v1/intents',
-        'POST /api/v1/intents',
-        'GET /api/v1/intents/:id',
-        'DELETE /api/v1/intents/:id',
-      ],
-      providers: [
-        'GET /api/v1/providers',
-        'POST /api/v1/providers',
-        'GET /api/v1/match/:providerId',
-      ],
-      offers: [
-        'POST /api/v1/intents/:id/offers',
-        'GET /api/v1/intents/:id/offers',
-        'POST /api/v1/intents/:id/accept',
-      ],
-      payments: [
-        'POST /api/v1/payments/release',
-        'GET /api/v1/payments/balance',
-      ],
+      categories: ['GET /api/v1/categories', 'GET /api/v1/categories/:id'],
+      intents: ['GET /api/v1/intents', 'POST /api/v1/intents', 'GET /api/v1/intents/:id', 'DELETE /api/v1/intents/:id'],
+      providers: ['GET /api/v1/providers', 'POST /api/v1/providers', 'GET /api/v1/match/:providerId'],
+      offers: ['POST /api/v1/intents/:id/offers', 'GET /api/v1/intents/:id/offers', 'POST /api/v1/intents/:id/accept'],
+      payments: ['POST /api/v1/payments/release', 'GET /api/v1/payments/balance'],
     },
   });
 });
 
 // Match endpoint (canonical): GET /api/v1/match/:providerId
 // Kept for backwards compatibility with docs/skills.
-app.get('/api/v1/match/:providerId', (req: Request, res: Response) => {
+app.get('/api/v1/match/:providerId', async (req: Request, res: Response) => {
   try {
     const { providerId } = req.params;
 
-    const provider = providerStore.get(providerId);
+    const provider = await providerStore.get(providerId);
     if (!provider) {
       res.status(404).json({ error: 'Provider not found' });
       return;
     }
 
-    const matches = findMatchingIntents(providerId);
+    const matches = await findMatchingIntents(providerId);
 
     res.json({
       providerId,
