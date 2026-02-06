@@ -73,7 +73,7 @@ export async function fulfillIntent(intentId: string, body: FulfillIntentInput):
     });
   }
 
-  const privateKey = process.env.SERVICE_WALLET_PRIVATE_KEY;
+  const privateKey = process.env.SERVICE_WALLET_PRIVATE_KEY || process.env.SERVICE_PRIVATE_KEY;
   if (!privateKey) {
     throw new AppError({
       code: 'CONFIG_ERROR',
