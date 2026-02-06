@@ -23,50 +23,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const input: CreateProviderInput = req.body;
 
-    // Validate required fields
-    const required = ['agentId', 'name', 'capabilities', 'pricing', 'wallet'] as const;
-    const missing = required.filter((f) => !(input as any)?.[f]);
-
-    if (missing.length > 0) {
-      throw new AppError({
-        code: 'VALIDATION_ERROR',
-        statusCode: 400,
-        message: 'Missing required fields',
-        details: { required, missing },
-      });
-    }
-
-    // Validate capabilities array
-    if (!Array.isArray(input.capabilities) || input.capabilities.length === 0) {
-      throw new AppError({
-        code: 'VALIDATION_ERROR',
-        statusCode: 400,
-        message: 'capabilities must be a non-empty array of CapabilityDeclaration',
-      });
-    }
-
-    // Validate each capability
-    for (const cap of input.capabilities as any[]) {
-      if (!cap.category || !cap.name || !cap.description || !cap.acceptsInputTypes || !cap.producesOutputFormats) {
-        throw new AppError({
-          code: 'VALIDATION_ERROR',
-          statusCode: 400,
-          message: 'Invalid capability declaration',
-          details: {
-            required: ['category', 'name', 'description', 'acceptsInputTypes', 'producesOutputFormats'],
-          },
-        });
-      }
-    }
-
-    // Validate pricing array
-    if (!Array.isArray(input.pricing) || input.pricing.length === 0) {
-      throw new AppError({
-        code: 'VALIDATION_ERROR',
-        statusCode: 400,
-        message: 'pricing must be a non-empty array of PricingDeclaration',
-      });
-    }
+    // (validated by Zod middleware)
 
     // Check for existing provider with same agentId
     const existing = await providerStore.getByAgentId(input.agentId);
@@ -109,12 +66,13 @@ router.post(
  */
 router.get(
   '/',
+  validateQuery(listProvidersQuerySchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { status, category } = req.query;
+    const { status, category } = req.query as { status?: string; category?: string };
 
     const providers = await providerStore.list({
-      status: status as string | undefined,
-      category: category as string | undefined,
+      status,
+      category,
     });
 
     res.json({

@@ -5,6 +5,8 @@
 import { Router, Request, Response } from 'express';
 import { intentStore, offerStore, providerStore } from '../store/index.js';
 import { executeTransfer, getBalance } from '../services/usdc.js';
+import { validateBody } from '../middleware/validate.js';
+import { releasePaymentBodySchema } from '../schemas/payments.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AppError } from '../utils/errors.js';
 
@@ -39,26 +41,11 @@ function getServicePrivateKey(): string {
  */
 router.post(
   '/release',
+  validateBody(releasePaymentBodySchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { intentId, confirmCompletion } = req.body;
 
-    // Validate required fields
-    if (!intentId) {
-      throw new AppError({
-        code: 'VALIDATION_ERROR',
-        statusCode: 400,
-        message: 'Missing required field: intentId',
-      });
-    }
-
-    if (!confirmCompletion) {
-      throw new AppError({
-        code: 'VALIDATION_ERROR',
-        statusCode: 400,
-        message: 'Must confirm completion',
-        details: { hint: 'Set confirmCompletion: true to release payment' },
-      });
-    }
+    // (validated by Zod middleware)
 
     // Validate intent
     const intent = await intentStore.get(intentId);
