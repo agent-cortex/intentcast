@@ -97,4 +97,4 @@ export const listProvidersQuerySchema = z
     category: z.string().optional(),
     x402: z.coerce.boolean().optional(),
   })
-  .strict();
+  .passthrough(); // Express adds path/params to req.query
