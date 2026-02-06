@@ -5,6 +5,8 @@
 import { Router, Request, Response } from 'express';
 import { intentStore, offerStore, providerStore } from '../store/index.js';
 import { executeTransfer, getBalance } from '../services/usdc.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { AppError } from '../utils/errors.js';
 
 const router = Router();
 
@@ -21,69 +23,91 @@ function getServicePrivateKey(): string {
   const pk = process.env.SERVICE_PRIVATE_KEY || process.env.SERVICE_WALLET_PRIVATE_KEY;
   if (pk) return pk;
 
-  throw new Error(
-    'Service wallet private key not available. Set SERVICE_PRIVATE_KEY (or SERVICE_WALLET_PRIVATE_KEY) in the environment.'
-  );
+  throw new AppError({
+    code: 'INTERNAL_SERVER_ERROR',
+    statusCode: 500,
+    message: 'Service wallet private key not available',
+    details: {
+      hint: 'Set SERVICE_PRIVATE_KEY (or SERVICE_WALLET_PRIVATE_KEY) in the environment.',
+    },
+  });
 }
 
 /**
  * POST /api/v1/payments/release — Release payment to provider
  * Body: { intentId, confirmCompletion: true }
  */
-router.post('/release', async (req: Request, res: Response) => {
-  try {
+router.post(
+  '/release',
+  asyncHandler(async (req: Request, res: Response) => {
     const { intentId, confirmCompletion } = req.body;
 
     // Validate required fields
     if (!intentId) {
-      res.status(400).json({
-        error: 'Missing required field: intentId',
+      throw new AppError({
+        code: 'VALIDATION_ERROR',
+        statusCode: 400,
+        message: 'Missing required field: intentId',
       });
-      return;
     }
 
     if (!confirmCompletion) {
-      res.status(400).json({
-        error: 'Must confirm completion',
-        hint: 'Set confirmCompletion: true to release payment',
+      throw new AppError({
+        code: 'VALIDATION_ERROR',
+        statusCode: 400,
+        message: 'Must confirm completion',
+        details: { hint: 'Set confirmCompletion: true to release payment' },
       });
-      return;
     }
 
     // Validate intent
     const intent = await intentStore.get(intentId);
     if (!intent) {
-      res.status(404).json({ error: 'Intent not found' });
-      return;
+      throw new AppError({
+        code: 'NOT_FOUND',
+        statusCode: 404,
+        message: 'Intent not found',
+        details: { intentId },
+      });
     }
 
     if (intent.status !== 'matched') {
-      res.status(400).json({
-        error: 'Cannot release payment',
-        reason: `Intent status is ${intent.status}, must be matched`,
+      throw new AppError({
+        code: 'BAD_REQUEST',
+        statusCode: 400,
+        message: 'Cannot release payment',
+        details: { reason: `Intent status is ${intent.status}, must be matched` },
       });
-      return;
     }
 
     if (!intent.acceptedOfferId) {
-      res.status(400).json({
-        error: 'No accepted offer for this intent',
+      throw new AppError({
+        code: 'BAD_REQUEST',
+        statusCode: 400,
+        message: 'No accepted offer for this intent',
       });
-      return;
     }
 
     // Get the accepted offer
     const offer = await offerStore.get(intent.acceptedOfferId);
     if (!offer) {
-      res.status(500).json({ error: 'Accepted offer not found' });
-      return;
+      throw new AppError({
+        code: 'INTERNAL_SERVER_ERROR',
+        statusCode: 500,
+        message: 'Accepted offer not found',
+        details: { acceptedOfferId: intent.acceptedOfferId },
+      });
     }
 
     // Get provider wallet
     const provider = await providerStore.get(offer.providerId);
     if (!provider) {
-      res.status(500).json({ error: 'Provider not found' });
-      return;
+      throw new AppError({
+        code: 'INTERNAL_SERVER_ERROR',
+        statusCode: 500,
+        message: 'Provider not found',
+        details: { providerId: offer.providerId },
+      });
     }
 
     const paymentAmount = offer.priceUsdc;
@@ -94,34 +118,26 @@ router.post('/release', async (req: Request, res: Response) => {
     // Check service wallet balance
     const balance = await getBalance(SERVICE_WALLET);
     if (parseFloat(balance) < parseFloat(paymentAmount)) {
-      res.status(400).json({
-        error: 'Insufficient service wallet balance',
-        available: balance,
-        required: paymentAmount,
+      throw new AppError({
+        code: 'BAD_REQUEST',
+        statusCode: 400,
+        message: 'Insufficient service wallet balance',
+        details: { available: balance, required: paymentAmount },
       });
-      return;
     }
 
     // Get private key and execute transfer
-    let privateKey: string;
-    try {
-      privateKey = getServicePrivateKey();
-    } catch (error) {
-      res.status(500).json({
-        error: 'Service wallet not configured',
-        message: (error as Error).message,
-      });
-      return;
-    }
+    const privateKey = getServicePrivateKey();
 
     const result = await executeTransfer(providerWallet, paymentAmount, privateKey);
 
     if (!result.success) {
-      res.status(500).json({
-        error: 'Payment transfer failed',
-        reason: result.error,
+      throw new AppError({
+        code: 'INTERNAL_SERVER_ERROR',
+        statusCode: 500,
+        message: 'Payment transfer failed',
+        details: { reason: result.error },
       });
-      return;
     }
 
     // Update intent status to completed
@@ -143,17 +159,15 @@ router.post('/release', async (req: Request, res: Response) => {
       },
       intent: await intentStore.get(intentId),
     });
-  } catch (error) {
-    console.error('Release payment error:', error);
-    res.status(500).json({ error: 'Failed to release payment' });
-  }
-});
+  })
+);
 
 /**
  * GET /api/v1/payments/balance — Check service wallet balance
  */
-router.get('/balance', async (_req: Request, res: Response) => {
-  try {
+router.get(
+  '/balance',
+  asyncHandler(async (_req: Request, res: Response) => {
     const balance = await getBalance(SERVICE_WALLET);
 
     res.json({
@@ -162,10 +176,7 @@ router.get('/balance', async (_req: Request, res: Response) => {
       currency: 'USDC',
       network: 'base-sepolia',
     });
-  } catch (error) {
-    console.error('Get balance error:', error);
-    res.status(500).json({ error: 'Failed to get balance' });
-  }
-});
+  })
+);
 
 export { router as paymentsRouter };

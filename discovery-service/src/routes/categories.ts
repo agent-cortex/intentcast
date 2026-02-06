@@ -7,6 +7,8 @@ import { CATEGORIES, getCategoryById } from '../models/categories.js';
 import { intentStore, providerStore } from '../store/index.js';
 import { getProviderCategories, getProviderPricing, Provider } from '../models/provider.js';
 import { Intent } from '../models/intent.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { AppError } from '../utils/errors.js';
 
 const router = Router();
 
@@ -14,8 +16,9 @@ const router = Router();
  * GET /api/v1/categories
  * List all available service categories with counts
  */
-router.get('/', async (_req: Request, res: Response) => {
-  try {
+router.get(
+  '/',
+  asyncHandler(async (_req: Request, res: Response) => {
     // Count providers and intents per category
     const categoryCounts = new Map<string, { providers: number; intents: number }>();
 
@@ -50,24 +53,26 @@ router.get('/', async (_req: Request, res: Response) => {
     }));
 
     res.json({ categories });
-  } catch (error) {
-    console.error('List categories error:', error);
-    res.status(500).json({ error: 'Failed to list categories' });
-  }
-});
+  })
+);
 
 /**
  * GET /api/v1/categories/:id
  * Get a single category by ID
  */
-router.get('/:id', async (req: Request, res: Response) => {
-  try {
+router.get(
+  '/:id',
+  asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const category = getCategoryById(id);
 
     if (!category) {
-      res.status(404).json({ error: 'Category not found' });
-      return;
+      throw new AppError({
+        code: 'NOT_FOUND',
+        statusCode: 404,
+        message: 'Category not found',
+        details: { id },
+      });
     }
 
     // Get providers and intents for this category
@@ -97,10 +102,7 @@ router.get('/:id', async (req: Request, res: Response) => {
         status: i.status,
       })),
     });
-  } catch (error) {
-    console.error('Get category error:', error);
-    res.status(500).json({ error: 'Failed to get category' });
-  }
-});
+  })
+);
 
 export { router as categoriesRouter };
