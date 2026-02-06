@@ -228,6 +228,21 @@ export default function DocsApi() {
         />
       </Section>
 
+      {/* Fulfillment */}
+      <Section title="POST /api/v1/intents/:id/fulfill — Fulfill (x402)">
+        <p>
+          Triggers provider execution by calling the provider&apos;s <strong>x402-protected</strong> endpoint. The service handles the
+          <code className="mx-1 text-zinc-200">402 → pay → retry</code> flow automatically.
+        </p>
+        <CodeBlock
+          title="Example request:"
+          code={`curl -s -X POST https://intentcast.agentcortex.space/api/v1/intents/<intentId>/fulfill \\\n  -H 'Content-Type: application/json' \\\n  -d '{"providerId":"<providerId>","offerId":"<offerId>"}' | jq`}
+        />
+        <p className="text-zinc-400 mt-2">
+          <strong>Returns:</strong> result payload + the onchain payment transaction hash (USDC on Base).
+        </p>
+      </Section>
+
       {/* Other Endpoints */}
       <Section title="Other Endpoints">
         <div className="grid gap-3">
