@@ -76,8 +76,12 @@ export async function callWithX402Payment(options: X402CallOptions): Promise<X40
     });
 
     // Build x402 client and register ExactEvmScheme for the requested network.
-    // Use v1 protocol for compatibility with our mock server
-    const client = new x402Client().registerV1(options.network as any, new ExactEvmScheme(toClientEvmSigner(account)));
+    // V1 uses different network names: 'base-sepolia' instead of 'eip155:84532'
+    // Map CAIP-2 to v1 network name
+    const v1Network = options.network === 'eip155:84532' ? 'base-sepolia' : 
+                      options.network === 'eip155:8453' ? 'base' : 
+                      options.network;
+    const client = new x402Client().registerV1(v1Network as any, new ExactEvmScheme(toClientEvmSigner(account)));
 
     const fetchWithPay = wrapFetchWithPayment(globalThis.fetch, client);
 
