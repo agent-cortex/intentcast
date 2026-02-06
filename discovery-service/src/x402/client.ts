@@ -76,7 +76,8 @@ export async function callWithX402Payment(options: X402CallOptions): Promise<X40
     });
 
     // Build x402 client and register ExactEvmScheme for the requested network.
-    const client = new x402Client().register(options.network as any, new ExactEvmScheme(toClientEvmSigner(account)));
+    // Use v1 protocol for compatibility
+    const client = new x402Client().register(options.network as any, new ExactEvmScheme(toClientEvmSigner(account)), 1);
 
     const fetchWithPay = wrapFetchWithPayment(globalThis.fetch, client);
 
