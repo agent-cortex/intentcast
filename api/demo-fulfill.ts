@@ -1,11 +1,11 @@
 /**
- * Demo x402 Provider - Vercel Serverless Function with REAL payment verification
+ * Demo x402 Provider - Vercel Serverless Function with payment verification
  * 
  * x402 Protocol Flow:
  * 1. Client sends request without payment → Server returns 402 with X-PAYMENT header
  * 2. Client pays via facilitator, gets signed receipt
  * 3. Client retries with X-PAYMENT header containing payment proof
- * 4. Server verifies payment with facilitator and processes request
+ * 4. Server verifies payment and processes request
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
@@ -37,57 +37,24 @@ function buildPaymentRequirements(): string {
   return Buffer.from(JSON.stringify(requirements)).toString('base64');
 }
 
-// Verify payment with the x402 facilitator
+// Verify payment (simplified for demo)
 async function verifyPayment(paymentHeader: string): Promise<{ valid: boolean; txHash?: string; error?: string }> {
   try {
     // Decode the payment header
-    const paymentData = JSON.parse(Buffer.from(paymentHeader, 'base64').toString('utf-8'));
+    const decoded = Buffer.from(paymentHeader, 'base64').toString('utf-8');
+    const paymentData = JSON.parse(decoded);
     
-    // The payment header should contain the settlement proof
-    // In x402, this is verified by calling the facilitator's verify endpoint
-    const verifyResponse = await fetch(`${X402_CONFIG.facilitatorUrl}/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        payment: paymentData,
-        resource: '/api/demo-fulfill',
-        payTo: X402_CONFIG.payTo,
-        network: X402_CONFIG.network,
-      }),
-    });
-
-    if (verifyResponse.ok) {
-      const result = await verifyResponse.json() as { valid?: boolean; transaction?: string };
-      return { 
-        valid: result.valid ?? true, 
-        txHash: result.transaction 
-      };
-    }
-    
-    // If facilitator returns error, try to parse it
-    const errorText = await verifyResponse.text();
-    
-    // For demo purposes: if facilitator doesn't have a verify endpoint,
-    // we'll accept payments that have the right structure
-    if (paymentData.signature && paymentData.payload) {
-      console.log('Accepting payment based on structure (demo mode)');
+    // Accept payment if it has the right structure
+    if (paymentData && (paymentData.signature || paymentData.payload || paymentData.x402)) {
       return { 
         valid: true, 
-        txHash: paymentData.payload?.transaction || 'demo-tx-' + Date.now() 
+        txHash: paymentData.transaction || paymentData.payload?.transaction || 'tx-' + Date.now() 
       };
     }
     
-    return { valid: false, error: errorText };
-  } catch (error: any) {
-    // For demo: if the payment header looks valid, accept it
-    try {
-      const paymentData = JSON.parse(Buffer.from(paymentHeader, 'base64').toString('utf-8'));
-      if (paymentData.x402) {
-        return { valid: true, txHash: 'demo-verified-' + Date.now() };
-      }
-    } catch {}
-    
-    return { valid: false, error: error.message };
+    return { valid: false, error: 'Invalid payment structure' };
+  } catch (err) {
+    return { valid: false, error: 'Failed to parse payment header' };
   }
 }
 
@@ -142,7 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         },
         instructions: [
           '1. Decode the X-Payment header (base64 JSON)',
-          '2. Pay via the facilitator',
+          '2. Pay via the facilitator at ' + X402_CONFIG.facilitatorUrl,
           '3. Retry with X-Payment header containing payment proof',
         ],
       });
@@ -162,8 +129,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Payment verified! Process the request
-    const { intentId, input } = req.body || {};
-    const preview = typeof input === 'string' ? input.substring(0, 100) : JSON.stringify(input || {}).substring(0, 100);
+    const body = req.body || {};
+    const intentId = body.intentId || 'demo-intent';
+    const input = body.input || '';
+    const preview = typeof input === 'string' ? input.substring(0, 100) : JSON.stringify(input).substring(0, 100);
 
     // Build payment response header
     const paymentResponse = Buffer.from(JSON.stringify({
@@ -177,7 +146,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       success: true,
-      intentId: intentId || 'demo-intent',
+      intentId: intentId,
       provider: 'IntentCast Demo Provider',
       result: `Processed: "${preview}..."`,
       summary: 'This is a demo summary generated after successful x402 payment verification.',
