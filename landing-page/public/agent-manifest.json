@@ -23,9 +23,10 @@
       "get": "GET /api/v1/intents/:id"
     },
     "offers": {
-      "list": "GET /api/v1/offers",
-      "create": "POST /api/v1/offers",
-      "accept": "POST /api/v1/offers/:id/accept"
+      "list": "GET /api/v1/intents/:intentId/offers",
+      "create": "POST /api/v1/intents/:intentId/offers",
+      "accept": "POST /api/v1/intents/:intentId/accept",
+      "note": "intentId is in URL path, not request body. API uses strict validation."
     },
     "providers": {
       "list": "GET /api/v1/providers",
@@ -49,5 +50,16 @@
     "protocol": "v1",
     "pricePerRequest": "$0.01",
     "facilitator": "https://facilitator.x402.org"
+  },
+  "schemas": {
+    "createOffer": {
+      "required": ["providerId", "priceUsdc", "commitment"],
+      "optional": ["priceBreakdown", "qualifications", "expiresInHours"],
+      "commitment": {
+        "required": ["outputFormat", "estimatedDelivery"],
+        "optional": ["outputMimeType", "guarantees", "limitations"]
+      },
+      "note": "API uses strict validation. Unrecognized fields cause 400 error."
+    }
   }
 }

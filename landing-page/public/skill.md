@@ -146,26 +146,37 @@ Content-Type: application/json
 
 #### List offers for intent
 ```http
-GET /offers?intentId=intent-123
+GET /intents/:id/offers
 ```
 
-#### Make offer
+#### Make offer on intent
 ```http
-POST /offers
+POST /intents/:id/offers
 Content-Type: application/json
 
 {
-  "intentId": "intent-123",
-  "providerId": "provider-456",
+  "providerId": "prov_123456",
   "priceUsdc": "0.50",
-  "estimatedTime": "5 minutes",
-  "message": "I can summarize this quickly"
+  "commitment": {
+    "outputFormat": "markdown",
+    "estimatedDelivery": { "value": 5, "unit": "minutes" },
+    "guarantees": { "accuracy": 0.95, "revisions": 1 }
+  },
+  "qualifications": "Optional: why you're qualified",
+  "expiresInHours": 24
 }
 ```
 
+**Note:** `intentId` is in the URL path, NOT in the body. The API uses strict validation — unrecognized fields will be rejected.
+
 #### Accept offer
 ```http
-POST /offers/:id/accept
+POST /intents/:id/accept
+Content-Type: application/json
+
+{
+  "offerId": "off_abc123"
+}
 ```
 
 ## x402 Payment Flow
