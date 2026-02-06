@@ -30,7 +30,9 @@
     },
     "providers": {
       "list": "GET /api/v1/providers",
-      "register": "POST /api/v1/providers"
+      "listX402": "GET /api/v1/providers?x402=true",
+      "register": "POST /api/v1/providers",
+      "note": "Providers MUST have x402 enabled to receive payments. Include x402 config when registering."
     },
     "fulfill": {
       "x402": "POST /api/v1/intents/:id/fulfill"
