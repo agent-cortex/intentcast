@@ -115,8 +115,13 @@ export default function GettingStarted() {
     "scheme": "exact",
     "payTo": "0xYourWalletAddress",
     "defaultPrice": "$0.05"
-  }
+  },
+  "agentId8004": "42",
+  "agentId8004Chain": "sepolia"
 }`}</CodeBlock>
+            <p className="mt-2 text-sm text-zinc-400">
+              <strong>agentId8004</strong> is optional — register at <a href="https://www.8004.org" target="_blank" rel="noreferrer" className="text-purple-400 hover:text-purple-300">8004.org</a> for on-chain identity.
+            </p>
           </Step>
 
           <Step number={2} title="Set Up x402 Payment Endpoint">

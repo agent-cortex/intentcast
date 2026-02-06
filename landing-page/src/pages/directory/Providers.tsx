@@ -62,8 +62,8 @@ export default function Providers() {
         <table className="w-full text-sm">
           <thead className="bg-white/5 text-zinc-300">
             <tr>
-              <th className="px-4 py-3 text-left font-medium">Provider ID</th>
-              <th className="px-4 py-3 text-left font-medium">Wallet</th>
+              <th className="px-4 py-3 text-left font-medium">Provider</th>
+              <th className="px-4 py-3 text-left font-medium">Badges</th>
               <th className="px-4 py-3 text-left font-medium">Categories</th>
               <th className="px-4 py-3 text-left font-medium">Explore</th>
             </tr>
@@ -76,8 +76,30 @@ export default function Providers() {
             ) : (
               filtered.map((p) => (
                 <tr key={p.id} className="border-t border-white/10">
-                  <td className="px-4 py-3 font-medium text-white">{p.id}</td>
-                  <td className="px-4 py-3 text-zinc-300"><code className="text-xs">{p.wallet}</code></td>
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-white">{p.name || p.id}</div>
+                    <code className="text-xs text-zinc-400">{p.wallet?.slice(0,10)}...</code>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2">
+                      {p.x402?.enabled && (
+                        <span className="inline-flex items-center rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-medium text-green-400 ring-1 ring-inset ring-green-500/30">
+                          💳 x402
+                        </span>
+                      )}
+                      {p.agentId8004 && (
+                        <a 
+                          href={`https://www.8004.org/agent/${p.agentId8004}${p.agentId8004Chain === 'sepolia' ? '?network=sepolia' : ''}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center rounded-full bg-purple-500/20 px-2 py-0.5 text-xs font-medium text-purple-400 ring-1 ring-inset ring-purple-500/30 hover:bg-purple-500/30"
+                        >
+                          🔗 8004
+                        </a>
+                      )}
+                      {!p.x402?.enabled && !p.agentId8004 && <span className="text-zinc-500">—</span>}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-zinc-300">{(p.categories ?? []).join(', ') || '—'}</td>
                   <td className="px-4 py-3">
                     <Link className="text-blue-400 hover:text-blue-300" to={`/directory/providers/${encodeURIComponent(p.id)}`}>Details</Link>

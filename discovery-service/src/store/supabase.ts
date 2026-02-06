@@ -68,6 +68,8 @@ type ProviderRow = {
   website_url: string | null;
   api_endpoint: string | null;
   x402: any | null;
+  agent_id_8004: string | null;
+  agent_id_8004_chain: string | null;
   registered_at: string;
   last_seen: string;
   created_at: string;
@@ -135,6 +137,8 @@ function toProvider(row: ProviderRow): Provider {
     websiteUrl: row.website_url ?? undefined,
     apiEndpoint: row.api_endpoint ?? undefined,
     x402: row.x402 ?? undefined,
+    agentId8004: row.agent_id_8004 ?? undefined,
+    agentId8004Chain: (row.agent_id_8004_chain as Provider['agentId8004Chain']) ?? undefined,
     registeredAt: new Date(row.registered_at),
     lastSeen: new Date(row.last_seen),
   };
@@ -282,6 +286,8 @@ export const providerStore = {
       website_url: provider.websiteUrl,
       api_endpoint: provider.apiEndpoint,
       x402: provider.x402,
+      agent_id_8004: provider.agentId8004,
+      agent_id_8004_chain: provider.agentId8004Chain,
       registered_at: provider.registeredAt.toISOString(),
       last_seen: provider.lastSeen.toISOString(),
     });
@@ -338,6 +344,8 @@ export const providerStore = {
     if (updates.websiteUrl !== undefined) updateData.website_url = updates.websiteUrl;
     if (updates.apiEndpoint !== undefined) updateData.api_endpoint = updates.apiEndpoint;
     if (updates.x402 !== undefined) updateData.x402 = updates.x402;
+    if (updates.agentId8004 !== undefined) updateData.agent_id_8004 = updates.agentId8004;
+    if (updates.agentId8004Chain !== undefined) updateData.agent_id_8004_chain = updates.agentId8004Chain;
 
     const { data, error } = await supabase
       .from('providers')

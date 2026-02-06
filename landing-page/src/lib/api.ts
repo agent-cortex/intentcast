@@ -29,6 +29,9 @@ export type Provider = {
   ratingCount?: number
   websiteUrl?: string
   createdAt?: string
+  x402?: { enabled?: boolean; network?: string; defaultPrice?: string }
+  agentId8004?: string
+  agentId8004Chain?: 'ethereum' | 'sepolia'
 }
 
 export type Intent = {

@@ -104,6 +104,11 @@ export interface Provider {
 
   /** Optional x402 paywall declaration for provider endpoints */
   x402?: X402Config;
+
+  /** ERC-8004 on-chain agent identity (token ID) */
+  agentId8004?: string;
+  /** Chain for 8004 identity: 'ethereum' (mainnet) or 'sepolia' */
+  agentId8004Chain?: 'ethereum' | 'sepolia';
   
   registeredAt: Date;
   lastSeen: Date;
@@ -128,6 +133,11 @@ export interface CreateProviderInput {
 
   /** Optional x402 paywall declaration for provider endpoints */
   x402?: X402Config;
+
+  /** ERC-8004 on-chain agent identity (token ID) */
+  agentId8004?: string;
+  /** Chain for 8004 identity: 'ethereum' (mainnet) or 'sepolia' */
+  agentId8004Chain?: 'ethereum' | 'sepolia';
 }
 
 export function createProvider(input: CreateProviderInput, id: string): Provider {
@@ -153,6 +163,8 @@ export function createProvider(input: CreateProviderInput, id: string): Provider
     websiteUrl: input.websiteUrl,
     apiEndpoint: input.apiEndpoint,
     x402: input.x402,
+    agentId8004: input.agentId8004,
+    agentId8004Chain: input.agentId8004Chain,
     registeredAt: now,
     lastSeen: now,
   };
