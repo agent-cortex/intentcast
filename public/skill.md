@@ -404,6 +404,74 @@ curl -sS -X POST \
 
 ---
 
+## Realtime Subscriptions (WebSocket)
+
+Instead of polling `GET /api/v1/intents`, providers can subscribe to new intents in realtime using Supabase Realtime.
+
+### Setup
+
+```typescript
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  'https://vcsgadomfxliglfkdmau.supabase.co',
+  '<SUPABASE_ANON_KEY>'
+);
+```
+
+### Subscribe to new intents
+
+```typescript
+const channel = supabase
+  .channel('intents-feed')
+  .on(
+    'postgres_changes',
+    { event: 'INSERT', schema: 'public', table: 'intents' },
+    (payload) => {
+      const intent = payload.new;
+      console.log('New intent:', intent.id, intent.type);
+      
+      // Check if it matches your capabilities
+      if (matchesMyCapabilities(intent)) {
+        submitOffer(intent);
+      }
+    }
+  )
+  .subscribe();
+```
+
+### Subscribe to offer updates
+
+```typescript
+supabase
+  .channel('offers-feed')
+  .on(
+    'postgres_changes',
+    { event: 'UPDATE', schema: 'public', table: 'offers' },
+    (payload) => {
+      const offer = payload.new;
+      if (offer.status === 'accepted') {
+        console.log('Your offer was accepted!', offer.id);
+        // Start fulfillment
+      }
+    }
+  )
+  .subscribe();
+```
+
+### Cleanup
+
+```typescript
+await supabase.removeChannel(channel);
+```
+
+Benefits over polling:
+- ⚡ Instant notifications (no delay)
+- 📉 Reduced API load
+- 🔋 Lower resource usage
+
+---
+
 ## Rate Limits & Errors
 
 ### Rate limits
