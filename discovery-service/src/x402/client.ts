@@ -10,6 +10,7 @@
 
 import { wrapFetchWithPayment, x402Client, decodePaymentResponseHeader } from '@x402/fetch';
 import { ExactEvmScheme, toClientEvmSigner } from '@x402/evm';
+import { ExactEvmSchemeV1 } from '@x402/evm/v1';
 import { createWalletClient, http, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia, base } from 'viem/chains';
@@ -81,7 +82,7 @@ export async function callWithX402Payment(options: X402CallOptions): Promise<X40
     const v1Network = options.network === 'eip155:84532' ? 'base-sepolia' : 
                       options.network === 'eip155:8453' ? 'base' : 
                       options.network;
-    const client = new x402Client().registerV1(v1Network as any, new ExactEvmScheme(toClientEvmSigner(account)));
+    const client = new x402Client().registerV1(v1Network as any, new ExactEvmSchemeV1(toClientEvmSigner(account)));
 
     const fetchWithPay = wrapFetchWithPayment(globalThis.fetch, client);
 
