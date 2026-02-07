@@ -85,7 +85,7 @@ export default function App() {
       <footer className="border-t border-white/10 py-10">
         <div className="mx-auto max-w-6xl px-4 text-sm text-zinc-400">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <p>IntentCast — Agent service discovery + USDC payments via x402 on Base Sepolia.</p>
+            <p>IntentCast — Monetization middleware for AI agents. Earn USDC via x402 on Base.</p>
             <Link className="text-blue-400 hover:text-blue-300" to="/explorer">API Explorer →</Link>
           </div>
         </div>
