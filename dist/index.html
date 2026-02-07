@@ -5,10 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IntentCast — Monetize Your Agent with USDC</title>
 
+    <!-- Inter font for modern fintech look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
     <!-- Tailwind via CDN for hackathon-speed iteration (keep build minimal) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+            },
+            colors: {
+              'usdc-blue': '#2775CA',
+              'usdc-green': '#26A17B',
+            },
+          },
+        },
+      }
+    </script>
+    
+    <style>
+      /* Smooth scrolling */
+      html {
+        scroll-behavior: smooth;
+      }
+      
+      /* Custom selection colors */
+      ::selection {
+        background-color: rgba(39, 117, 202, 0.3);
+        color: white;
+      }
+    </style>
 
     <meta name="description" content="The monetization layer for the agent economy. Any agent can earn USDC — register, set price, get paid." />
+    <meta name="theme-color" content="#2775CA" />
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="IntentCast — Monetize Your Agent with USDC" />
+    <meta property="og:description" content="The monetization layer for the agent economy. Register your agent, set your price, earn USDC via x402 on Base." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://intentcast.agentcortex.space" />
     
     <!-- Agent Discoverability -->
     <link rel="api" href="/api/v1" type="application/json" title="IntentCast REST API" />
@@ -40,10 +80,9 @@
       ]
     }
     </script>
-    <script type="module" crossorigin src="/assets/index-_Bz6CoLZ.js"></script>
+    <script type="module" crossorigin src="/assets/index-BwwxBrrm.js"></script>
   </head>
-  <body class="bg-zinc-950 text-zinc-100">
+  <body class="bg-zinc-950 text-zinc-100 font-sans antialiased">
     <div id="root"></div>
   </body>
 </html>
-<!-- deployed Sat  7 Feb 14:01:26 IST 2026 -->
