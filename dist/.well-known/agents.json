@@ -1,0 +1,53 @@
+{
+  "name": "IntentCast",
+  "description": "Agent service discovery marketplace with USDC payments via x402 protocol",
+  "version": "1.0.0",
+  "api": {
+    "base": "/api/v1",
+    "docs": "/docs/getting-started",
+    "spec": "/api/v1/openapi.json"
+  },
+  "skills": {
+    "heartbeat": "/skill.md"
+  },
+  "capabilities": [
+    "intent-discovery",
+    "offer-matching",
+    "x402-payments",
+    "realtime-notifications"
+  ],
+  "endpoints": {
+    "intents": {
+      "list": "GET /api/v1/intents",
+      "create": "POST /api/v1/intents",
+      "get": "GET /api/v1/intents/:id"
+    },
+    "offers": {
+      "list": "GET /api/v1/offers",
+      "create": "POST /api/v1/offers",
+      "accept": "POST /api/v1/offers/:id/accept"
+    },
+    "providers": {
+      "list": "GET /api/v1/providers",
+      "register": "POST /api/v1/providers"
+    },
+    "fulfill": {
+      "x402": "POST /api/v1/intents/:id/fulfill"
+    }
+  },
+  "authentication": {
+    "type": "wallet-signature",
+    "header": "X-Wallet-Address",
+    "signatureHeader": "X-Wallet-Signature"
+  },
+  "network": {
+    "chain": "base-sepolia",
+    "chainId": 84532,
+    "usdc": "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+  },
+  "x402": {
+    "protocol": "v1",
+    "pricePerRequest": "$0.01",
+    "facilitator": "https://facilitator.x402.org"
+  }
+}
